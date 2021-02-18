@@ -1,4 +1,5 @@
 import math
+import sys
 
 class BinaryMemorylessDistribution:
     def __init__(self):
@@ -69,7 +70,7 @@ class BinaryMemorylessDistribution:
         # loop over all other output letters, and check if we need to append as a new letter, or add to the last letter
         for probPair in self.probs[1:]:
             prevProbPair = newProbs[-1]
-            if probPair[0] / (probPair[0] + probPair[1]) != prevProbPair[0] / (prevProbPair[0] + prevProbPair[1]):
+            if not math.isclose(probPair[0] / (probPair[0] + probPair[1]), prevProbPair[0] / (prevProbPair[0] + prevProbPair[1])):
                 newProbs.append( probPair )
             else:
                 newProbs[-1][0] += probPair[0]
@@ -77,7 +78,7 @@ class BinaryMemorylessDistribution:
 
         self.probs = newProbs
 
-        self.normalize()
+        self.normalize() # for good measure
 
     # polar transforms
     def minusTransform(self):
@@ -88,8 +89,20 @@ class BinaryMemorylessDistribution:
             for y2 in self.probs:
                 newDistribution.probs.append( [y1[0] * y2[0] + y1[1] * y2[1], y1[0] * y2[1] + y1[1] * y2[0]])
 
-        newDistribution.removeZeroProbOutput()
-        newDistribution.normalize()
+        newDistribution.mergeEquivalentSymbols()
+
+        return newDistribution
+
+    def plusTransform(self):
+        
+        newDistribution = BinaryMemorylessDistribution()
+
+        for y1 in self.probs:
+            for y2 in self.probs:
+                newDistribution.probs.append( [y1[0] * y2[0], y1[1] * y2[1]])
+                newDistribution.probs.append( [y1[1] * y2[0], y1[0] * y2[1]])
+
+        newDistribution.mergeEquivalentSymbols()
 
         return newDistribution
 

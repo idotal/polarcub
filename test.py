@@ -8,22 +8,14 @@ p = 0.1
 
 bsc = BinaryMemorylessDistribution.makeBSC(p)
 minus = bsc.minusTransform()
-minusminus = minus.minusTransform()
+plus = bsc.plusTransform()
 
+# print( minus.probs )
+# print( plus.probs )
 print( bsc.conditionalEntropy() )
 print( minus.conditionalEntropy() )
+print( plus.conditionalEntropy() )
 
-print( minus.probs )
-minus.mergeEquivalentSymbols()
-print( minus.probs )
-
-# print( minusminus.conditionalEntropy() )
-
-# print( minusminus.probs )
-#
-minusminus.mergeEquivalentSymbols()
-
-print( minusminus.probs )
 
 
 

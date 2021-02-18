@@ -1,20 +1,29 @@
+#! /usr/bin/env python3
+
 import BinaryMemorylessDistribution
 
 bmd = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
 
 p = 0.1
 
-# bmd.probs.append( [0.5*p, 0.5*(1-p)] )
-# bmd.probs.append( [0.5*(1-p), 0.5*p] )
+bsc = BinaryMemorylessDistribution.makeBSC(p)
+minus = bsc.minusTransform()
+minusminus = minus.minusTransform()
 
-bmd.probs.append( [p, (1-p)] )
-bmd.probs.append( [(1-p), p] )
+print( bsc.conditionalEntropy() )
+print( minus.conditionalEntropy() )
 
-print( bmd.errorProb() )
-print( bmd.bhattacharyya() )
-print( bmd.totalVariationDistance() )
-bmd.normalize()
-print( bmd.errorProb() )
-print( bmd.bhattacharyya() )
-print( bmd.totalVariationDistance() )
+print( minus.probs )
+minus.mergeEquivalentSymbols()
+print( minus.probs )
+
+# print( minusminus.conditionalEntropy() )
+
+# print( minusminus.probs )
+#
+minusminus.mergeEquivalentSymbols()
+
+print( minusminus.probs )
+
+
 

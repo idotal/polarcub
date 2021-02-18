@@ -28,6 +28,13 @@ class BinaryMemorylessDistribution:
 
         return tvSum
 
+    def normalize(self):
+        probSum = 0.0
 
+        for probPair in self.probs:
+            probSum += sum(probPair)
+
+        for probPair in self.probs:
+            probPair[:] = [ prob / probSum for prob in probPair ]
 
 

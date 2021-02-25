@@ -10,15 +10,17 @@ llh.insertAtTail(13, ["c"])
 llh.insertAtTail(9, ["d"])
 llh.insertAtTail(4, ["e"])
 llh.insertAtTail(100, ["f"])
-print ( llh )
+print( llh )
 
 llh.extractHeapMin()
-print ( llh )
+print( llh )
 
 newMin = llh.getHeapMin()
 
 llh.updateKey(newMin.leftElementInList, 103)
-print ( llh )
+print( llh )
+
+print( llh.returnData() ) 
 
 
 

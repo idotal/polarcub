@@ -51,7 +51,7 @@ class LinkedListHeap:
         newElement = self._heapArray.pop()
         self._heapArray[0] = newElement
         newElement.indexInArray = 0
-        self.propagateDown(newElement)
+        self._propagateDown(newElement)
 
         return element
 
@@ -60,9 +60,9 @@ class LinkedListHeap:
         linkedListHeapElement.key = newKey
 
         if oldKey < newKey:
-            self.propagateDown(linkedListHeapElement)
+            self._propagateDown(linkedListHeapElement)
         elif oldKey > newKey:
-            self.propagateUp(linkedListHeapElement)
+            self._propagateUp(linkedListHeapElement)
 
     def insertAtTail(self, key, data):
         element = LinkedListHeapElement()
@@ -89,9 +89,21 @@ class LinkedListHeap:
         self._heapArray.append(element)
 
         # update the heap
-        self.propagateUp(element)
+        self._propagateUp(element)
 
-    def swap(self, linkedListHeapElement1, linkedListHeapElement2):
+    def returnData(self):
+        data = []
+
+        element = self._head
+
+        while element != None:
+            data.append(element.data)
+            element = element.rightElementInList
+
+        return data
+
+
+    def _swap(self, linkedListHeapElement1, linkedListHeapElement2):
         tempIndex = linkedListHeapElement1.indexInArray
         linkedListHeapElement1.indexInArray = linkedListHeapElement2.indexInArray
         linkedListHeapElement2.indexInArray = tempIndex
@@ -99,7 +111,7 @@ class LinkedListHeap:
         self._heapArray[linkedListHeapElement1.indexInArray] = linkedListHeapElement1
         self._heapArray[linkedListHeapElement2.indexInArray] = linkedListHeapElement2
 
-    def propagateUp(self, linkedListHeapElement):
+    def _propagateUp(self, linkedListHeapElement):
         element = linkedListHeapElement
 
         while True:
@@ -113,9 +125,9 @@ class LinkedListHeap:
             if ( parent.key < element.key ):
                 break
 
-            self.swap(element,  parent)
+            self._swap(element,  parent)
 
-    def propagateDown(self,linkedListHeapElement):
+    def _propagateDown(self,linkedListHeapElement):
         element = linkedListHeapElement
 
         while True:
@@ -140,7 +152,7 @@ class LinkedListHeap:
             if minChild == None: # we are the root
                 break
 
-            self.swap(element,  minChild)
+            self._swap(element,  minChild)
 
 class LinkedListHeapElement:
     def __init__(self):

@@ -3,24 +3,24 @@
 
 class LinkedListHeap:
     def __init__(self):
-        self.head = None
-        self.tail = None
-        self.heapArray = []
+        self._head = None
+        self._tail = None
+        self._heapArray = []
 
     def __str__(self):
         s = ""
         # s = "elementsCount = " + str(self.elementsCount)
-        # s = s + " head = " + str(self.head)
-        # s = s + " tail = " + str(self.tail) + " "
+        # s = s + " _head = " + str(self.head)
+        # s = s + " _tail = " + str(self.tail) + " "
 
         s = s + "head -> "
 
-        element = self.head
+        element = self._head
         while ( element != None ):
             # s = s + "(mem = " + str(element) + " indexInArray = " + str(element.indexInArray) + ", key = " + str(element.key) + ", data = " + str(element.data) + ")"
             s = s + "(indexInArray = " + str(element.indexInArray) + ", key = " + str(element.key) + ", data = " + str(element.data) + ")"
 
-            if element != self.tail:
+            if element != self._tail:
                 s = s + " <-> "
 
             element = element.rightElementInList
@@ -28,11 +28,14 @@ class LinkedListHeap:
         s = s + " <- tail"
         return s
 
+    def numberOfElements(self):
+        return len(self._heapArray)
+
     def getHeapMin(self):
-        return self.heapArray[0]
+        return self._heapArray[0]
 
     def extractHeapMin(self):
-        element = self.heapArray[0]
+        element = self._heapArray[0]
 
         # remove from linked list
         left = element.leftElementInList
@@ -45,8 +48,8 @@ class LinkedListHeap:
             right.leftElementInList = left
 
         # update heap
-        newElement = self.heapArray.pop()
-        self.heapArray[0] = newElement
+        newElement = self._heapArray.pop()
+        self._heapArray[0] = newElement
         newElement.indexInArray = 0
         self.propagateDown(newElement)
 
@@ -66,24 +69,24 @@ class LinkedListHeap:
 
         element.key = key
         element.data = data
-        element.indexInArray = len(self.heapArray)
+        element.indexInArray = len(self._heapArray)
 
         # to our left is the old tail
-        element.leftElementInList = self.tail
+        element.leftElementInList = self._tail
 
         # now we are the new tail
-        self.tail = element
+        self._tail = element
 
         # are we also the new head?
-        if self.head == None:
-            self.head = element
+        if self._head == None:
+            self._head = element
 
         # if there is an element to the left of us, update its right element to point to us
         if element.leftElementInList != None:
            element.leftElementInList.rightElementInList = element
 
         # add ourselves to the array
-        self.heapArray.append(element)
+        self._heapArray.append(element)
 
         # update the heap
         self.propagateUp(element)
@@ -93,8 +96,8 @@ class LinkedListHeap:
         linkedListHeapElement1.indexInArray = linkedListHeapElement2.indexInArray
         linkedListHeapElement2.indexInArray = tempIndex
 
-        self.heapArray[linkedListHeapElement1.indexInArray] = linkedListHeapElement1
-        self.heapArray[linkedListHeapElement2.indexInArray] = linkedListHeapElement2
+        self._heapArray[linkedListHeapElement1.indexInArray] = linkedListHeapElement1
+        self._heapArray[linkedListHeapElement2.indexInArray] = linkedListHeapElement2
 
     def propagateUp(self, linkedListHeapElement):
         element = linkedListHeapElement
@@ -105,7 +108,7 @@ class LinkedListHeap:
             if ( parentIndex == -1 ): # we are the root
                 break
             
-            parent = self.heapArray[parentIndex]
+            parent = self._heapArray[parentIndex]
 
             if ( parent.key < element.key ):
                 break
@@ -122,14 +125,14 @@ class LinkedListHeap:
             minKey = element.key
             minChild = None
 
-            if leftChildIndex < len(self.heapArray):
-                leftChild = self.heapArray[leftChildIndex]
+            if leftChildIndex < len(self._heapArray):
+                leftChild = self._heapArray[leftChildIndex]
                 if leftChild.key < minKey:
                     minKey = leftChild.key
                     minChild = leftChild
 
-            if rightChildIndex < len(self.heapArray):
-                rightChild = self.heapArray[rightChildIndex]
+            if rightChildIndex < len(self._heapArray):
+                rightChild = self._heapArray[rightChildIndex]
                 if rightChild.key < minKey:
                     minKey = rightChild.key
                     minChild = rightChild

@@ -15,6 +15,14 @@ print ( llh )
 llh.extractHeapMin()
 print ( llh )
 
+newMin = llh.getHeapMin()
+
+llh.updateKey(newMin.leftElementInList, 103)
+print ( llh )
+
+
+
+
 
 # bmd = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
 #

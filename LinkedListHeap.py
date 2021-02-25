@@ -3,10 +3,54 @@
 
 class LinkedListHeap:
     def __init__(self):
-        self.elementsCount = 0
         self.head = None
         self.tail = None
         self.heapArray = []
+
+    def __str__(self):
+        s = ""
+        # s = "elementsCount = " + str(self.elementsCount)
+        # s = s + " head = " + str(self.head)
+        # s = s + " tail = " + str(self.tail) + " "
+
+        s = s + "head -> "
+
+        element = self.head
+        while ( element != None ):
+            # s = s + "(mem = " + str(element) + " indexInArray = " + str(element.indexInArray) + ", key = " + str(element.key) + ", data = " + str(element.data) + ")"
+            s = s + "(indexInArray = " + str(element.indexInArray) + ", key = " + str(element.key) + ", data = " + str(element.data) + ")"
+
+            if element != self.tail:
+                s = s + " <-> "
+
+            element = element.rightElementInList
+
+        s = s + " <- tail"
+        return s
+
+    def getHeapMin(self):
+        return self.heapArray[0]
+
+    def extractHeapMin(self):
+        element = self.heapArray[0]
+
+        # remove from linked list
+        left = element.leftElementInList
+        right = element.rightElementInList
+
+        if left != None:
+            left.rightElementInList = right
+
+        if right != None:
+            right.leftElementInList = left
+
+        # update heap
+        newElement = self.heapArray.pop()
+        self.heapArray[0] = newElement
+        newElement.indexInArray = 0
+        self.propagateDown(newElement)
+
+        return element
 
     def updateKey(self, linkedListHeapElement, newKey):
         oldKey = linkedListHeapElement.key
@@ -22,8 +66,7 @@ class LinkedListHeap:
 
         element.key = key
         element.data = data
-        element.indexInArray = elementsCount
-        self.elementsCount += 1
+        element.indexInArray = len(self.heapArray)
 
         # to our left is the old tail
         element.leftElementInList = self.tail
@@ -42,6 +85,9 @@ class LinkedListHeap:
         # add ourselves to the array
         self.heapArray.append(element)
 
+        # update the heap
+        self.propagateUp(element)
+
     def swap(self, linkedListHeapElement1, linkedListHeapElement2):
         tempIndex = linkedListHeapElement1.indexInArray
         linkedListHeapElement1.indexInArray = linkedListHeapElement2.indexInArray
@@ -53,13 +99,13 @@ class LinkedListHeap:
     def propagateUp(self, linkedListHeapElement):
         element = linkedListHeapElement
 
-        while true:
+        while True:
             parentIndex = indexOfParentInArray(element.indexInArray)
 
             if ( parentIndex == -1 ): # we are the root
                 break
             
-            parent = self.heapArray[parent]
+            parent = self.heapArray[parentIndex]
 
             if ( parent.key < element.key ):
                 break
@@ -69,20 +115,20 @@ class LinkedListHeap:
     def propagateDown(self,linkedListHeapElement):
         element = linkedListHeapElement
 
-        while true:
+        while True:
             leftChildIndex = indexOfLeftChildInArray(element.indexInArray)
             rightChildIndex = indexOfRightChildInArray(element.indexInArray)
 
             minKey = element.key
             minChild = None
 
-            if leftChildIndex < elementsCount:
+            if leftChildIndex < len(self.heapArray):
                 leftChild = self.heapArray[leftChildIndex]
                 if leftChild.key < minKey:
-                    minKey = lefChild.key
+                    minKey = leftChild.key
                     minChild = leftChild
 
-            if rightChildIndex < elementsCount:
+            if rightChildIndex < len(self.heapArray):
                 rightChild = self.heapArray[rightChildIndex]
                 if rightChild.key < minKey:
                     minKey = rightChild.key

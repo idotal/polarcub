@@ -106,6 +106,16 @@ class BinaryMemorylessDistribution:
 
         return newDistribution
 
+    # TODO: finish this
+
+    # def degrade(self, L):
+    #
+    #     newDistribution = BinaryMemorylessDistribution()
+    #
+    #     llh = LinkedListHeap.LinkedListHeap()
+    #
+    #     return newDistribution
+
 # useful channels
 
 def makeBSC(p):

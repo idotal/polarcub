@@ -1,11 +1,47 @@
-# We will implement the heap as an array, so that the conversion to c++ is faster.
+# We will implement the heap as an array, so that the conversion to c++ is easier.
 # Note that we could have just used pointers to left child, right child, and parent.
 
+from BinaryMemorylessDistribution import eta
+
 class LinkedListHeap:
-    def __init__(self):
+
+    def __init__(self, dataList=None, keyList=None, calcKey=None, updateData=None):
+        # check if this code duplication can be avoided
         self._head = None
         self._tail = None
         self._heapArray = []
+
+        # calcKey(dataLeft, dataCenter, dataRight)
+        # calculate the key of dataCenter, according to its right and left neighbours 
+        self.calcKey = calcKey 
+
+        # updateData(dataLeft, dataCenter, dataRight)
+        # dataCenter has been taken out, so update left and right neighbours
+        self.updateData = updateData 
+
+        # no data given
+        if dataList == None and keyList == None:
+            return
+
+        # if no keyList is given, we are to calculate the keys on our own
+        assert keyList == None or len(dataList) == len(keyList) 
+        
+        # TODO: This is O(n log n). We could use makeheap and get down to O(n)
+        if len(dataList) > 0:
+
+            # we must prepare our own key list
+            if keyList == None:
+                keyList = []
+
+                listHelper = lambda l, i : l[i] if (0 <= i < len(l)) else None
+
+                for i in range(len(dataList)):
+                    key = self.calcKey(listHelper(dataList,i-1), listHelper(dataList,i), listHelper(dataList,i+1))
+                    keyList.append(key)
+
+            # keyList ready, so insert
+            for data, key in zip(dataList, keyList):
+                 self.insertAtTail(data, key)
 
     def __str__(self):
         s = ""
@@ -152,7 +188,7 @@ class LinkedListHeap:
             if minChild == None: # we are the root
                 break
 
-            self._swap(element,  minChild)
+            self._swap(element, minChild)
 
 class LinkedListHeapElement:
     def __init__(self):
@@ -173,3 +209,21 @@ def indexOfRightChildInArray(i):
 
 def indexOfParentInArray(i):
     return (i+1) // 2 - 1
+
+def calcKey_degrade(dataLeft, dataCenter, dataRight): # how much would it cost to merge dataLeft and dataCenter
+    if dataLeft == None:
+        return float("inf")
+
+    assert len(dataLeft) == len(dataCenter) == 2
+
+    dataMerge = [ dataLeft[0] + dataCenter[0], dataLeft[1] + dataCenter[1] ]
+
+    return hxgiveny(dataMerge) - hxgiveny(dataLeft) - hxgiveny(dataCenter)
+
+def updateData_degrade(dataLeft, dataCenter, dataRight): # merge dataLeft and dataCenter
+    dataLeft[0] += dataCenter[0]
+    dataLeft[1] += dataCenter[1]
+
+def hxgiveny(data):
+    py = data[0] + data[1]
+    return py*( eta(data[0]/py) + eta(data[1]/py) )

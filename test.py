@@ -22,6 +22,17 @@ print( llh )
 
 print( llh.returnData() ) 
 
+data = [[0.1,0.2], [0.4,0.3], [0.1,0.7], [0.9,0.8]]
+key  = [   3     ,     9    ,     2    ,    4     ]
+
+llh = LinkedListHeap.LinkedListHeap(key, data)
+print( llh )
+
+dataLeft = [0.01,0.02]
+dataCenter = [0.11,0.25]
+dataRight = None #[0.3,0.65]
+
+print( LinkedListHeap.calcKey_degrade(dataLeft, dataCenter, dataRight) )
 
 
 

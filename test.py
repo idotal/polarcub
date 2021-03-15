@@ -7,9 +7,9 @@ p = 0.11
 
 bsc = BinaryMemorylessDistribution.makeBSC(p)
 
-print( "base entropy = ", bsc.conditionalEntropy() )
+print( "base capacity = ", 1.0 - bsc.conditionalEntropy() )
 
-n = 8
+n = 2
 L = 100
 
 channels = []
@@ -28,6 +28,6 @@ for channel in channels[m]:
     print( channel.conditionalEntropy() )
     entropySum += channel.conditionalEntropy()
 
-print( "average = ", entropySum / 2**(n-1) )
+print( "average capacity = ", 1.0 - entropySum / 2**(n-1) )
 
 

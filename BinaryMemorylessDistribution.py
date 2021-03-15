@@ -47,6 +47,8 @@ class BinaryMemorylessDistribution:
         for probPair in self.probs:
             probSum += sum(probPair)
 
+            print( "probSum = ", probSum )
+
         for probPair in self.probs:
             probPair[:] = [ prob / probSum for prob in probPair ]
 
@@ -77,10 +79,8 @@ class BinaryMemorylessDistribution:
                 if not math.isclose(probPair[b] / sum(probPair), prevProbPair[b] / sum(prevProbPair)):  
                     isclose = False
 
-            # if not myisclose(probPair[0] / (probPair[0] + probPair[1]), prevProbPair[0] / (prevProbPair[0] + prevProbPair[1])):
-            # if not math.isclose(probPair[0] / (probPair[0] + probPair[1]), prevProbPair[0] / (prevProbPair[0] + prevProbPair[1])):
             if not isclose:
-                newProbs.append( probPair )
+                newProbs.append( [probPair[0], probPair[1]] )
             else:
                 for b in range(2):
                     newProbs[-1][b] += probPair[b]

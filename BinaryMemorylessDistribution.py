@@ -63,7 +63,7 @@ class BinaryMemorylessDistribution:
         self.removeZeroProbOutput()
 
         # sort probs according to p(x=0|y)
-        self.probs.sort(key = lambda probPair: probPair[0] / (probPair[0] + probPair[1]) )
+        self.probs.sort(key = lambda probPair: probPair[0] / sum(probPair) )
 
         # insert the first output letter
         newProbs = [self.probs[0]]
@@ -71,11 +71,19 @@ class BinaryMemorylessDistribution:
         # loop over all other output letters, and check if we need to append as a new letter, or add to the last letter
         for probPair in self.probs[1:]:
             prevProbPair = newProbs[-1]
-            if not math.isclose(probPair[0] / (probPair[0] + probPair[1]), prevProbPair[0] / (prevProbPair[0] + prevProbPair[1])):
+
+            isclose = True
+            for b in range(2):
+                if not math.isclose(probPair[b] / sum(probPair), prevProbPair[b] / sum(prevProbPair)):  
+                    isclose = False
+
+            # if not myisclose(probPair[0] / (probPair[0] + probPair[1]), prevProbPair[0] / (prevProbPair[0] + prevProbPair[1])):
+            # if not math.isclose(probPair[0] / (probPair[0] + probPair[1]), prevProbPair[0] / (prevProbPair[0] + prevProbPair[1])):
+            if not isclose:
                 newProbs.append( probPair )
             else:
-                newProbs[-1][0] += probPair[0]
-                newProbs[-1][1] += probPair[1]
+                for b in range(2):
+                    newProbs[-1][b] += probPair[b]
 
         self.probs = newProbs
 
@@ -111,6 +119,9 @@ class BinaryMemorylessDistribution:
     def degrade(self, L):
         dataList = []
         keyList = []
+
+        # for good measure, even though this has typically already been done
+        self.probs.sort(key = lambda probPair: probPair[0] / sum(probPair) )
 
         for probPair in self.probs:
             datum = [probPair[0], probPair[1]] # make a copy
@@ -160,6 +171,9 @@ def eta(p):
 def hxgiveny(data):
     py = data[0] + data[1]
     return py * ( eta(data[0]/py) + eta(data[1]/py) )
+
+# def myisclose(a, b):
+#     return True if abs(a-b) < 100.0 * sys.float_info.epsilon else False
 
 # useful channels
 

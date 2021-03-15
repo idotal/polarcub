@@ -3,53 +3,31 @@
 import BinaryMemorylessDistribution
 import LinkedListHeap
 
-# llh = LinkedListHeap.LinkedListHeap()
-# llh.insertAtTail(8, ["a"])
-# llh.insertAtTail(5, ["b"])
-# llh.insertAtTail(13, ["c"])
-# llh.insertAtTail(9, ["d"])
-# llh.insertAtTail(4, ["e"])
-# llh.insertAtTail(100, ["f"])
-# print( llh )
-#
-# llh.extractHeapMin()
-# print( llh )
-#
-# newMin = llh.getHeapMin()
-#
-# llh.updateKey(newMin.leftElementInList, 103)
-# print( llh )
-#
-# print( llh.returnData() ) 
-#
-# data = [[0.1,0.2], [0.4,0.3], [0.1,0.7], [0.9,0.8]]
-# key  = [   3     ,     9    ,     2    ,    4     ]
-#
-# llh = LinkedListHeap.LinkedListHeap(key, data)
-# print( llh )
-#
-# dataLeft = [0.01,0.02]
-# dataCenter = [0.11,0.25]
-# dataRight = None #[0.3,0.65]
-
-p = 0.1
+p = 0.11
 
 bsc = BinaryMemorylessDistribution.makeBSC(p)
-minus = bsc.minusTransform()
-plus = bsc.plusTransform()
-plusplus = plus.plusTransform()
-plusplusplus = plusplus.plusTransform()
 
-# print( minus.probs )
-# print( plus.probs )
-# print( bsc.conditionalEntropy() )
-# print( minus.conditionalEntropy() )
-# print( plus.conditionalEntropy() )
+print( "base entropy = ", bsc.conditionalEntropy() )
 
-d = plusplusplus.degrade(4)
-print( plusplusplus.conditionalEntropy() )
-print( d.conditionalEntropy() )
+n = 8
+L = 100
 
+channels = []
+channels.append([])
+channels[0].append(bsc)
 
+for m in range(1,n):
+    channels.append([])
+    for channel in channels[m-1]:
+        channels[m].append(channel.minusTransform().degrade(L))
+        channels[m].append(channel.plusTransform().degrade(L))
+
+entropySum = 0.0
+
+for channel in channels[m]:
+    print( channel.conditionalEntropy() )
+    entropySum += channel.conditionalEntropy()
+
+print( "average = ", entropySum / 2**(n-1) )
 
 

@@ -44,10 +44,18 @@ class BinaryMemorylessDistribution:
     def normalize(self):
         probSum = 0.0
 
+        tempProbs = []
         for probPair in self.probs:
-            probSum += sum(probPair)
+            tempProbs.append(probPair[0])
+            tempProbs.append(probPair[1])
 
-            print( "probSum = ", probSum )
+        tempProbs.sort()
+
+        for tp in tempProbs:
+            probSum += tp
+
+        # for probPair in self.probs:
+        #     probSum += sum(probPair)
 
         for probPair in self.probs:
             probPair[:] = [ prob / probSum for prob in probPair ]
@@ -164,7 +172,7 @@ def eta(p):
     assert 0 <= p <= 1
 
     if p == 0 or p == 1:
-        return p
+        return 0
     else:
         return -p * math.log2(p)
 

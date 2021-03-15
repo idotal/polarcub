@@ -1,5 +1,6 @@
 import math
 import sys
+import LinkedListHeap
 
 class BinaryMemorylessDistribution:
     def __init__(self):
@@ -106,15 +107,59 @@ class BinaryMemorylessDistribution:
 
         return newDistribution
 
-    # TODO: finish this
+    # public functions for degrading/upgrading
+    def degrade(self, L):
+        dataList = []
+        keyList = []
 
-    # def degrade(self, L):
-    #
-    #     newDistribution = BinaryMemorylessDistribution()
-    #
-    #     llh = LinkedListHeap.LinkedListHeap()
-    #
-    #     return newDistribution
+        for probPair in self.probs:
+            datum = [probPair[0], probPair[1]] # make a copy
+            dataList.append(datum)
+                               
+        for i in range(len(dataList)):
+            key = _calcKey_degrade(_listIndexingHelper(dataList,i-1), _listIndexingHelper(dataList,i))
+            keyList.append(key)
+
+        llh = LinkedListHeap.LinkedListHeap(keyList, dataList)
+
+        while llh.numberOfElements() > L:
+            topOfHeap = llh.extractHeapMin()
+            leftElement = topOfHeap.leftElementInList
+            rightElement = topOfHeap.rightElementInList
+            
+            # move probs to left element
+            for b in range(2):
+                leftElement.data[b] += topOfHeap.data[b]
+
+            # recalculate key of left element
+            leftLeftElement = leftElement.leftElementInList
+
+            if leftLeftElement != None:
+                key = _calcKey_degrade(leftLeftElement.data, leftElement.data)
+                llh.updateKey(leftElement, key)
+
+            # recalculate key of right element
+            if rightElement != None:
+                key = _calcKey_degrade(leftElement.data, rightElement.data)
+                llh.updateKey(rightElement, key)
+
+        newDistribution = BinaryMemorylessDistribution()
+        newDistribution.probs = llh.returnData()
+
+        return newDistribution
+
+# functions for degrade/upgrade/merge
+def eta(p):
+    assert 0 <= p <= 1
+
+    if p == 0 or p == 1:
+        return p
+    else:
+        return -p * math.log2(p)
+
+def hxgiveny(data):
+    py = data[0] + data[1]
+    return py * ( eta(data[0]/py) + eta(data[1]/py) )
 
 # useful channels
 
@@ -125,13 +170,25 @@ def makeBSC(p):
     
     return bsc
 
-# useful functions
+def makeBEC(p):
+    bec = BinaryMemorylessDistribution()
+    bec.probs.append( [0.5 * (1.0-p), 0] )
+    bec.probs.append( [0, 0.5 * (1.0-p)] )
+    bec.probs.append( [0.5 * p, 0.5 * p] )
+    
+    return bec
 
-def eta(p):
-    assert 0 <= p <= 1
+# private functions for degrade
+def _calcKey_degrade(dataLeft, dataCenter): # how much would it cost to merge dataLeft and dataCenter
+    if dataLeft == None:
+        return float("inf")
 
-    if p == 0 or p == 1:
-        return p
-    else:
-        return -p * math.log2(p)
+    assert len(dataLeft) == len(dataCenter) == 2
+
+    dataMerge = [ dataLeft[0] + dataCenter[0], dataLeft[1] + dataCenter[1] ]
+
+    return hxgiveny(dataMerge) - hxgiveny(dataLeft) - hxgiveny(dataCenter)
+
+def _listIndexingHelper(l, i):
+    return l[i] if (0 <= i < len(l)) else None
 

@@ -300,9 +300,14 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
     piCenter = sum(dataCenter)
     piRight = sum(dataRight)
 
-    normalizedLeft = dataLeft/piLeft
-    normalizedCenter = dataCenter/piCenter
-    normalizedRight = dataRight/piRight
+    normalizedLeft = []
+    normalizedCenter = []
+    normalizedRight = []
+
+    for b in range(2):
+        normalizedLeft.append(dataLeft[b]/piLeft)
+        normalizedCenter.append(dataCenter[b]/piCenter)
+        normalizedRight.append(dataRight[b]/piRight)
 
     # calculate Delta_left - Delta_right
     # split into cases, for numerical stability
@@ -313,7 +318,7 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
     else:
         deltaLeft = normalizedLeft[0] - normalizedLeft[1]
         deltaRight = normalizedRight[0] - normalizedRight[1]
-        dataLeftMinusRight = deltaLeft - deltaRight
+        deltaLeftMinusRight = deltaLeft - deltaRight
 
     assert(deltaLeftMinusRight > 0.0) # should have been resolved by merging equivalent symbols
 

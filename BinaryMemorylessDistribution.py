@@ -6,6 +6,16 @@ class BinaryMemorylessDistribution:
     def __init__(self):
         self.probs = []  # probs[yindex][xindex]
 
+    def __str__(self):
+        s = "Binary memoryless channel with " + str(len(self.probs)) + " symbols and error probability " + str(self.errorProb()) + ". [p(y,x=0), p(y,x=1)]: "
+
+        for probPair in self.probs:
+            s += "[" + str(probPair[0]) + ", " + str(probPair[1]) + "], "
+
+        s = s[0:-2] # remove the last ", "
+
+        return s
+
     # polar toolbox
     def errorProb(self):
         errorProbSum = 0.0
@@ -87,7 +97,11 @@ class BinaryMemorylessDistribution:
         zeroMoreProbable.sort(key = lambda probPair: -probPair[0] / sum(probPair) )
         oneMoreProbable.sort(key = lambda probPair: probPair[1] / sum(probPair) )
     
-        self.probs = oneMoreProbable + zeroMoreProbable
+        # print("zeroMoreProbable: ", zeroMoreProbable)
+        # print("oneMoreProbable: ", oneMoreProbable)
+        self.probs = zeroMoreProbable + oneMoreProbable 
+
+        # print(self)
 
     def mergeEquivalentSymbols(self):
         self.removeZeroProbOutput()
@@ -147,9 +161,6 @@ class BinaryMemorylessDistribution:
         dataList = []
         keyList = []
 
-        # for good measure, even though this has typically already been done
-        self.probs.sort(key = lambda probPair: probPair[0] / sum(probPair) )
-
         for probPair in self.probs:
             datum = [probPair[0], probPair[1]] # make a copy
             dataList.append(datum)
@@ -190,9 +201,6 @@ class BinaryMemorylessDistribution:
         dataList = []
         keyList = []
 
-        # for good measure, even though this has typically already been done
-        self.probs.sort(key = lambda probPair: probPair[0] / sum(probPair) )
-
         for probPair in self.probs:
             datum = [probPair[0], probPair[1]] # make a copy
             dataList.append(datum)
@@ -204,11 +212,14 @@ class BinaryMemorylessDistribution:
         llh = LinkedListHeap.LinkedListHeap(keyList, dataList)
 
         while llh.numberOfElements() > L:
+            # print("llh.numberOfElements = ", llh.numberOfElements())
+            # print(llh)
+
             topOfHeap = llh.extractHeapMin()
             leftElement = topOfHeap.leftElementInList
             rightElement = topOfHeap.rightElementInList
             
-            dataMergeLeft, dataMergeRight = upgradedLeftRightProbs(dataLeft, dataCenter, dataRight)
+            dataMergeLeft, dataMergeRight = upgradedLeftRightProbs(leftElement.data, topOfHeap.data, rightElement.data)
 
             # move probs to left and right elements
             for b in range(2):
@@ -225,7 +236,7 @@ class BinaryMemorylessDistribution:
             # recalculate key of right element
             rightRightElement = rightElement.rightElementInList
 
-            if rightElement != None:
+            if rightRightElement != None:
                 key = _calcKey_upgrade(leftElement.data, rightElement.data, rightRightElement.data)
                 llh.updateKey(rightElement, key)
 
@@ -325,7 +336,7 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
     # calculate thetaLeft and thetaRight
     # split into cases, for numerical stability
     if normalizedLeft[0] < 0.5 and normalizedRight[0] < 0.5:
-        if nomalizedLeft[0] - normalizedCenter[0] < normalizedCenter[0] - normalizedRight[0]: # center is closer to left
+        if normalizedLeft[0] - normalizedCenter[0] < normalizedCenter[0] - normalizedRight[0]: # center is closer to left
             # so, the smaller theta is thetaRight
             deltaLeftMinusCenter = 2.0 * ( normalizedLeft[0] - normalizedCenter[0] )
             thetaRight = deltaLeftMinusCenter/deltaLeftMinusRight
@@ -335,7 +346,7 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
             thetaLeft = deltaCenterMinusRight/deltaLeftMinusRight
             thetaRight = 1.0 - thetaLeft
     elif normalizedLeft[1] < 0.5 and normalizedRight[1] < 0.5:
-        if normalizedCenter[1] - nomalizedLeft[1] <  normalizedRight[1] - normalizedCenter[1]: # center is closer to left
+        if normalizedCenter[1] - normalizedLeft[1] <  normalizedRight[1] - normalizedCenter[1]: # center is closer to left
             # so, the smaller theta is thetaRight
             deltaLeftMinusCenter = 2.0 * ( normalizedCenter[1] - normalizedLeft[1] )
             thetaRight = deltaLeftMinusCenter/deltaLeftMinusRight
@@ -347,14 +358,18 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
     else:
         deltaLeft = normalizedLeft[0] - normalizedLeft[1]
         deltaCenter = normalizedCenter[0] - normalizedCenter[1]
-        dataLeftMinusCenter = deltaLeft - deltaCenter
+        deltaLeftMinusCenter = deltaLeft - deltaCenter
         thetaRight = deltaLeftMinusCenter/deltaLeftMinusRight
         thetaLeft = 1.0 - thetaRight
 
     assert(0.0 < thetaLeft < 1.0 and 0.0 < thetaRight < 1.0)
 
-    dataMergeLeft = thetaLeft * piCenter
-    dataMergeRight = thetaRight * piCenter
+    dataMergeLeft = []
+    dataMergeRight = []
+
+    for b in range(2):
+        dataMergeLeft.append(thetaLeft * piCenter * normalizedLeft[b])
+        dataMergeRight.append(thetaRight * piCenter * normalizedRight[b])
 
     return dataMergeLeft, dataMergeRight 
 

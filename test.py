@@ -9,7 +9,7 @@ bsc = BinaryMemorylessDistribution.makeBSC(p)
 
 print( "base capacity = ", 1.0 - bsc.conditionalEntropy() )
 
-n = 8
+n = 6
 L = 100
 
 channels = []

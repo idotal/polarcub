@@ -94,14 +94,10 @@ class BinaryMemorylessDistribution:
                 oneMoreProbable.append(probPair)
         
         # sort probs according to p(x=0|y) 
-        zeroMoreProbable.sort(key = lambda probPair: -probPair[0] / sum(probPair) )
-        oneMoreProbable.sort(key = lambda probPair: probPair[1] / sum(probPair) )
+        zeroMoreProbable.sort(key = lambda probPair: probPair[1] / sum(probPair) )
+        oneMoreProbable.sort(key = lambda probPair: -probPair[0] / sum(probPair) )
     
-        # print("zeroMoreProbable: ", zeroMoreProbable)
-        # print("oneMoreProbable: ", oneMoreProbable)
         self.probs = zeroMoreProbable + oneMoreProbable 
-
-        # print(self)
 
     def mergeEquivalentSymbols(self):
         self.removeZeroProbOutput()

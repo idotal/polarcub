@@ -40,17 +40,58 @@ class QaryMemorylessDistribution:
 
         return entropySum
 
+    # TODO: debug this function
     def oneHotBinaryMemorylessDistributions(self):
         binaryMemorylessDistributions = []
+        q = self.q
 
         for i in range(q-1):
             binaryMemorylessDistributions.append(BinaryMemorylessDistribution())
 
-        for probTuple in self.probs:
-            for x in range(q-2,-1,-1):
-                pass # TODO stopped here
+        # calculate the marginals p(X = j)
+        marginals = []
 
-        # TODO: calculate p(x^{i-1} = 0), and normalize
+        for x in range(q-1):
+            tempSum = 0.0
+            for probTuple in self.probs:
+                tempSum += probTuple[x]
+            marginals.append(tempSum)
+
+        # calculate p(X > j)
+        probGreaterThan = []
+        for x in range(q):
+            probGreaterThan.append(0)
+
+
+        for x in range(q-2,-1,-1):
+            probGreaterThan[x] = probGreaterThan[x+1] + marginal[x+1]
+
+        # x \equiv (x_0,x_1,...x_{q-2}), where x_j = 1 iff x = j (the vector is all zero iff x = q-1
+
+        # For each y, first calculate P(X_j = b, Y=y, X^{j-1} = 0) for b in {0,1}, and then use the above calculated marginals to get 
+        # P(X_j = b, Y=y | X^{j-1} = 0) = P(X_j = b, Y=y, X^{j-1} = 0) / P(X^{j-1} = 0), where P(X^{j-1} = 0) = P( X > j-1 )
+
+        for probTuple in self.probs:
+
+            prev_pbzero = prev_pbone = None # to catch errors
+
+            for j in range(q-2,-1,-1):
+                # Calculate P(X_j = b, Y=y, X^{j-1} = 0), for b = 1. That is, P(X = j, Y=y)
+                pbone = probTuple[j]
+                # Calculate P(X_j = b, Y=y, X^{j-1} = 0), for b = 0. That is, P(X > j, Y=y)
+                if j == q-2:
+                    pbzero = probTuple[j+1]
+                else:
+                    pbzero =  prev_pbone + prev_pbzero # greater than j either means j+1 or greater than j+1
+
+                prev_pbzero, prev_pbone = pbzero, pbone
+
+                if j == 0:
+                    probPair = (pbzero, pbone)
+                else:
+                    probPair = (pbzero/probGreaterThan[j-1], pbone/probGreaterThan[j-1])
+
+                binaryMemorylessDistributions[j].append(probPair)
 
         return binaryMemorylessDistributions
 

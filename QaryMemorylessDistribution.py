@@ -9,10 +9,10 @@ class QaryMemorylessDistribution:
     def __str__(self):
         s = "Qry memoryless channel with q = " + str(self.q) + " and " + str(len(self.probs)) + " output symbols. The error probability is " + str(self.errorProb()) + ". [p(y,x=0), p(y,x=1), ..., p(y,x=q-1)]: "
 
-        for probPair in self.probs:
+        for probTuple in self.probs:
             s += "[" 
-            for y in range(self.q):
-                s += str(probPair[y]) + ", "
+            for x in range(self.q):
+                s += str(probTuple[x]) + ", "
             s = s[0:-2] # remove the last ", "
             s += "], "
         s = s[0:-2] # remove the last ", "
@@ -23,9 +23,9 @@ class QaryMemorylessDistribution:
         totalProbSum = 0.0
         noErrorProbSum = 0.0
 
-        for probPair in self.probs:
-            totalProbSum += sum(probPair)
-            noErrorProbSum += max(probPair)
+        for probTuple in self.probs:
+            totalProbSum += sum(probTuple)
+            noErrorProbSum += max(probTuple)
 
         return totalProbSum - noErrorProbSum
 
@@ -39,6 +39,20 @@ class QaryMemorylessDistribution:
             entropySum -= eta(sum(probTuple))
 
         return entropySum
+
+    def oneHotBinaryMemorylessDistributions(self):
+        binaryMemorylessDistributions = []
+
+        for i in range(q-1):
+            binaryMemorylessDistributions.append(BinaryMemorylessDistribution())
+
+        for probTuple in self.probs:
+            for x in range(q-2,-1,-1):
+                pass # TODO stopped here
+
+        # TODO: calculate p(x^{i-1} = 0), and normalize
+
+        return binaryMemorylessDistributions
 
     # polar transforms
     def minusTransform(self):

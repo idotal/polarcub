@@ -10,6 +10,12 @@ p = 0.11
 qchannel = QaryMemorylessDistribution.makeQEC(q, p) 
 print(qchannel)
 
+# qplus = qchannel.plusTransform()
+# print(qplus)
+
+qminus = qchannel.minusTransform()
+print(qminus)
+
 # p = 0.11
 #
 # bsc = BinaryMemorylessDistribution.makeBSC(p)

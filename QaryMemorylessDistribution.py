@@ -28,6 +28,48 @@ class QaryMemorylessDistribution:
 
         return totalProbSum - noErrorProbSum
 
+    # polar transforms
+    def minusTransform(self):
+        
+        newDistribution = QaryMemorylessDistribution(self.q)
+
+        for y1 in self.probs:
+            for y2 in self.probs:
+                tempProbs = [0 for x in range(self.q)]
+
+                for x1 in range(self.q):
+                    for x2 in range(self.q):
+                        u1 = (x1 + x2) % self.q
+                        tempProbs[u1] += y1[x1] * y2[x2]
+
+                newDistribution.probs.append(tempProbs)
+
+        newDistribution.mergeEquivalentSymbols()
+
+        return newDistribution
+
+    def plusTransform(self):
+        
+        newDistribution = QaryMemorylessDistribution(self.q)
+
+        for y1 in self.probs:
+            for y2 in self.probs:
+
+                for u1 in range(self.q):
+                    tempProbs = [0 for x in range(self.q)]
+                    for u2 in range(self.q):
+                        x1 = (u1 - u2 + self.q) % self.q
+                        x2 = u2
+                        tempProbs[u2] += y1[x1] * y2[x2]
+                    newDistribution.probs.append(tempProbs)
+
+        newDistribution.mergeEquivalentSymbols()
+
+        return newDistribution
+
+    def mergeEquivalentSymbols(self):
+        pass #TODO: implement this
+
 # useful channels
 def makeQSC(q, p):
     qsc = QaryMemorylessDistribution(q)

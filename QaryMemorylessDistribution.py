@@ -1,4 +1,5 @@
 import BinaryMemorylessDistribution
+from BinaryMemorylessDistribution import eta
 
 class QaryMemorylessDistribution:
     def __init__(self, q):
@@ -28,6 +29,17 @@ class QaryMemorylessDistribution:
 
         return totalProbSum - noErrorProbSum
 
+    def conditionalEntropy(self):
+        entropySum = 0.0
+
+        for probTuple in self.probs:
+            for p in probTuple:
+                entropySum += eta(p)
+
+            entropySum -= eta(sum(probTuple))
+
+        return entropySum
+
     # polar transforms
     def minusTransform(self):
         
@@ -43,8 +55,6 @@ class QaryMemorylessDistribution:
                         tempProbs[u1] += y1[x1] * y2[x2]
 
                 newDistribution.probs.append(tempProbs)
-
-        newDistribution.mergeEquivalentSymbols()
 
         return newDistribution
 
@@ -63,12 +73,8 @@ class QaryMemorylessDistribution:
                         tempProbs[u2] += y1[x1] * y2[x2]
                     newDistribution.probs.append(tempProbs)
 
-        newDistribution.mergeEquivalentSymbols()
-
         return newDistribution
 
-    def mergeEquivalentSymbols(self):
-        pass #TODO: implement this
 
 # useful channels
 def makeQSC(q, p):

@@ -8,13 +8,13 @@ q = 3
 
 p = 0.11
 qchannel = QaryMemorylessDistribution.makeQEC(q, p) 
-print(qchannel)
+print(qchannel.conditionalEntropy())
 
-# qplus = qchannel.plusTransform()
-# print(qplus)
+qplus = qchannel.plusTransform()
+print(qplus.conditionalEntropy())
 
 qminus = qchannel.minusTransform()
-print(qminus)
+print(qminus.conditionalEntropy())
 
 # p = 0.11
 #

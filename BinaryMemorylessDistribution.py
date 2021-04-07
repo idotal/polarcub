@@ -16,6 +16,9 @@ class BinaryMemorylessDistribution:
 
         return s
 
+    def append(self, item):
+        self.probs.append(item)
+
     # polar toolbox
     def errorProb(self):
         errorProbSum = 0.0
@@ -133,7 +136,7 @@ class BinaryMemorylessDistribution:
 
         for y1 in self.probs:
             for y2 in self.probs:
-                newDistribution.probs.append( [y1[0] * y2[0] + y1[1] * y2[1], y1[0] * y2[1] + y1[1] * y2[0]])
+                newDistribution.append( [y1[0] * y2[0] + y1[1] * y2[1], y1[0] * y2[1] + y1[1] * y2[0]])
 
         newDistribution.mergeEquivalentSymbols()
 
@@ -145,8 +148,8 @@ class BinaryMemorylessDistribution:
 
         for y1 in self.probs:
             for y2 in self.probs:
-                newDistribution.probs.append( [y1[0] * y2[0], y1[1] * y2[1]])
-                newDistribution.probs.append( [y1[1] * y2[0], y1[0] * y2[1]])
+                newDistribution.append( [y1[0] * y2[0], y1[1] * y2[1]])
+                newDistribution.append( [y1[1] * y2[0], y1[0] * y2[1]])
 
         newDistribution.mergeEquivalentSymbols()
 
@@ -261,16 +264,16 @@ def hxgiveny(data):
 
 def makeBSC(p):
     bsc = BinaryMemorylessDistribution()
-    bsc.probs.append( [0.5 * p, 0.5 * (1.0-p)] )
-    bsc.probs.append( [0.5 * (1.0-p), 0.5 * p] )
+    bsc.append( [0.5 * p, 0.5 * (1.0-p)] )
+    bsc.append( [0.5 * (1.0-p), 0.5 * p] )
     
     return bsc
 
 def makeBEC(p):
     bec = BinaryMemorylessDistribution()
-    bec.probs.append( [0.5 * (1.0-p), 0] )
-    bec.probs.append( [0, 0.5 * (1.0-p)] )
-    bec.probs.append( [0.5 * p, 0.5 * p] )
+    bec.append( [0.5 * (1.0-p), 0] )
+    bec.append( [0, 0.5 * (1.0-p)] )
+    bec.append( [0.5 * p, 0.5 * p] )
     
     return bec
 

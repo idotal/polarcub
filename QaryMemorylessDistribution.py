@@ -18,6 +18,9 @@ class QaryMemorylessDistribution:
         s = s[0:-2] # remove the last ", "
         return s
 
+    def append(self, item):
+        self.probs.append(item)
+
     # polar toolbox
     def errorProb(self):
         totalProbSum = 0.0
@@ -40,18 +43,17 @@ class QaryMemorylessDistribution:
 
         return entropySum
 
-    # TODO: debug this function
     def oneHotBinaryMemorylessDistributions(self):
         binaryMemorylessDistributions = []
         q = self.q
 
         for i in range(q-1):
-            binaryMemorylessDistributions.append(BinaryMemorylessDistribution())
+            binaryMemorylessDistributions.append(BinaryMemorylessDistribution.BinaryMemorylessDistribution())
 
         # calculate the marginals p(X = j)
         marginals = []
 
-        for x in range(q-1):
+        for x in range(q):
             tempSum = 0.0
             for probTuple in self.probs:
                 tempSum += probTuple[x]
@@ -64,7 +66,7 @@ class QaryMemorylessDistribution:
 
 
         for x in range(q-2,-1,-1):
-            probGreaterThan[x] = probGreaterThan[x+1] + marginal[x+1]
+            probGreaterThan[x] = probGreaterThan[x+1] + marginals[x+1]
 
         # x \equiv (x_0,x_1,...x_{q-2}), where x_j = 1 iff x = j (the vector is all zero iff x = q-1
 
@@ -109,7 +111,7 @@ class QaryMemorylessDistribution:
                         u1 = (x1 + x2) % self.q
                         tempProbs[u1] += y1[x1] * y2[x2]
 
-                newDistribution.probs.append(tempProbs)
+                newDistribution.append(tempProbs)
 
         return newDistribution
 
@@ -126,7 +128,7 @@ class QaryMemorylessDistribution:
                         x1 = (u1 - u2 + self.q) % self.q
                         x2 = u2
                         tempProbs[u2] += y1[x1] * y2[x2]
-                    newDistribution.probs.append(tempProbs)
+                    newDistribution.append(tempProbs)
 
         return newDistribution
 
@@ -137,7 +139,7 @@ def makeQSC(q, p):
 
     for y in range(q):
         tempProbs = [(1.0 - p)/q if x == y else p/(q*(q-1)) for x in range(q)]
-        qsc.probs.append(tempProbs)
+        qsc.append(tempProbs)
     
     return qsc
 
@@ -147,10 +149,10 @@ def makeQEC(q, p):
     # first, create the non-erasure symbols
     for y in range(q):
         tempProbs = [(1.0 - p)/q if x == y else 0.0 for x in range(q)]
-        qec.probs.append(tempProbs)
+        qec.append(tempProbs)
     
     tempProbs = [p/q for x in range(q) ]
-    qec.probs.append(tempProbs)
+    qec.append(tempProbs)
 
     return qec
     

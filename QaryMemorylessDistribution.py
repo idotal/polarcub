@@ -132,6 +132,25 @@ class QaryMemorylessDistribution:
 
         return newDistribution
 
+    # public functions for degrading/upgrading
+    def degrade(self, L):
+        oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
+        M = floor( L ** (1.0/(q-1)) )
+        
+        degradedOneHotBinaryMemorylessDistributions = []
+        for x in range(q-1):
+            degradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].degrade(M) )
+
+
+    def upgrade(self, L):
+        oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
+        M = floor( L ** (1.0/(q-1)) )
+
+        upgradedOneHotBinaryMemorylessDistributions = []
+        for x in range(q-1):
+            upgradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].upgrade(M) )
+
+
 
 # useful channels
 def makeQSC(q, p):

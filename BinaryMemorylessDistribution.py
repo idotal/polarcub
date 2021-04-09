@@ -82,7 +82,8 @@ class BinaryMemorylessDistribution:
         newProbs = []
         newAuxiliary = []
 
-        for probPair, auxDatum in itertools.zip_longest(self.probs, self.auxiliary):
+        tempAux = [] if self.auxiliary == None else self.auxiliary
+        for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux ):
             if sum(probPair) > 0.0:
                 newProbs.append(probPair)
                 newAuxiliary.append(auxDatum)
@@ -118,7 +119,8 @@ class BinaryMemorylessDistribution:
         #
         # self.probs = zeroMoreProbable + oneMoreProbable 
 
-        for probPair, auxDatum in itertools.zip_longest(self.probs, self.auxiliary):
+        tempAux = [] if self.auxiliary == None else self.auxiliary
+        for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
             if probPair[0] / sum(probPair) > 0.5:
                 zeroMoreProbable.append((probPair, auxDatum))
             else:

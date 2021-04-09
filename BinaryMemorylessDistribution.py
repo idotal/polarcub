@@ -120,6 +120,7 @@ class BinaryMemorylessDistribution:
         # self.probs = zeroMoreProbable + oneMoreProbable 
 
         tempAux = [] if self.auxiliary == None else self.auxiliary
+
         for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
             if probPair[0] / sum(probPair) > 0.5:
                 zeroMoreProbable.append((probPair, auxDatum))
@@ -129,11 +130,20 @@ class BinaryMemorylessDistribution:
         # sort probs according to p(x=0|y) 
 
         # doesn't work in python3, so commented out
+        # This is probably for the best, since by defining the functions explicitly I get an improvement in performance
         # zeroMoreProbable.sort(key = lambda probPair, auxDatum: probPair[1] / sum(probPair) )
         # oneMoreProbable.sort(key = lambda probPair, auxDatum: -probPair[0] / sum(probPair) )
 
-        zeroMoreProbable.sort(key = lambda tup: tup[0][1] / sum(tup[0]) )
-        oneMoreProbable.sort(key = lambda tup: -tup[0][0] / sum(tup[0]) )
+        def zeroMoreProbableKey(tup):
+            probPair = tup[0]
+            return probPair[1] / sum(probPair)
+
+        def oneMoreProbableKey(tup):
+            probPair = tup[0]
+            return -probPair[0] / sum(probPair)
+
+        zeroMoreProbable.sort(key = zeroMoreProbableKey)
+        oneMoreProbable.sort(key = oneMoreProbableKey)
 
         # self.probs = zeroMoreProbable + oneMoreProbable
 
@@ -158,9 +168,12 @@ class BinaryMemorylessDistribution:
 
         # insert the first output letter
         newProbs = [self.probs[0]]
+        if self.auxiliary != None:
+            newAuxiliary = [self.auxiliary[0]]
 
         # loop over all other output letters, and check if we need to append as a new letter, or add to the last letter
-        for probPair in self.probs[1:]:
+        tempAux = [] if self.auxiliary == None else self.auxiliary
+        for probPair, auxDatum in itertools.zip_longest(self.probs[1:], tempAux[1:]):
             prevProbPair = newProbs[-1]
 
             isclose = True
@@ -170,11 +183,18 @@ class BinaryMemorylessDistribution:
 
             if not isclose:
                 newProbs.append( [probPair[0], probPair[1]] )
+                newAuxiliary.append(auxDatum)
             else:
                 for b in range(2):
                     newProbs[-1][b] += probPair[b]
 
+                    if self.auxiliary != None:
+                        newAuxiliary[-1] |= auxDatum
+
         self.probs = newProbs
+
+        if self.auxiliary != None:
+            self.auxiliary = newAuxiliary
 
         self.normalize() # for good measure
 

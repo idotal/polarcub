@@ -1,10 +1,12 @@
 import math
 import sys
 import LinkedListHeap
+import itertools
 
 class BinaryMemorylessDistribution:
     def __init__(self):
         self.probs = []  # probs[yindex][xindex]
+        self.auxiliary = None # for keeping track of things needed by degrading or upgrading procedures
 
     def __str__(self):
         s = "Binary memoryless channel with " + str(len(self.probs)) + " symbols and error probability " + str(self.errorProb()) + ". [p(y,x=0), p(y,x=1)]: "
@@ -13,6 +15,9 @@ class BinaryMemorylessDistribution:
             s += "[" + str(probPair[0]) + ", " + str(probPair[1]) + "], "
 
         s = s[0:-2] # remove the last ", "
+
+        if self.auxiliary != None:
+            s += "\n the auxiliary data is " + str(self.auxiliary)
 
         return s
 
@@ -75,12 +80,23 @@ class BinaryMemorylessDistribution:
 
     def removeZeroProbOutput(self):
         newProbs = []
+        newAuxiliary = []
 
-        for probPair in self.probs:
+        for probPair, auxDatum in itertools.zip_longest(self.probs, self.auxiliary):
             if sum(probPair) > 0.0:
                 newProbs.append(probPair)
+                newAuxiliary.append(auxDatum)
+
+        # for probPair in self.probs:
+        #     if sum(probPair) > 0.0:
+        #         newProbs.append(probPair)
+
 
         self.probs = newProbs
+        if self.auxiliary != None:
+            self.auxiliary = newAuxiliary
+
+
 
     # sort according to p(x=0|y), in *ascending* order
     # that way, recalling the definition of Delta in upgradeLeftRightProbs, we have deltaLeftMinusRight >= 0
@@ -90,17 +106,48 @@ class BinaryMemorylessDistribution:
         zeroMoreProbable = []
         oneMoreProbable = []
         
-        for probPair in self.probs:
+        # for probPair in self.probs:
+        #     if probPair[0] / sum(probPair) > 0.5:
+        #         zeroMoreProbable.append(probPair)
+        #     else:
+        #         oneMoreProbable.append(probPair)
+        #
+        # # sort probs according to p(x=0|y) 
+        # zeroMoreProbable.sort(key = lambda probPair: probPair[1] / sum(probPair) )
+        # oneMoreProbable.sort(key = lambda probPair: -probPair[0] / sum(probPair) )
+        #
+        # self.probs = zeroMoreProbable + oneMoreProbable 
+
+        for probPair, auxDatum in itertools.zip_longest(self.probs, self.auxiliary):
             if probPair[0] / sum(probPair) > 0.5:
-                zeroMoreProbable.append(probPair)
+                zeroMoreProbable.append((probPair, auxDatum))
             else:
-                oneMoreProbable.append(probPair)
+                oneMoreProbable.append((probPair, auxDatum))
         
         # sort probs according to p(x=0|y) 
-        zeroMoreProbable.sort(key = lambda probPair: probPair[1] / sum(probPair) )
-        oneMoreProbable.sort(key = lambda probPair: -probPair[0] / sum(probPair) )
-    
-        self.probs = zeroMoreProbable + oneMoreProbable 
+
+        # doesn't work in python3, so commented out
+        # zeroMoreProbable.sort(key = lambda probPair, auxDatum: probPair[1] / sum(probPair) )
+        # oneMoreProbable.sort(key = lambda probPair, auxDatum: -probPair[0] / sum(probPair) )
+
+        zeroMoreProbable.sort(key = lambda tup: tup[0][1] / sum(tup[0]) )
+        oneMoreProbable.sort(key = lambda tup: -tup[0][0] / sum(tup[0]) )
+
+        # self.probs = zeroMoreProbable + oneMoreProbable
+
+        self.probs = []
+        if self.auxiliary != None:
+            self.auxiliary = []
+
+        for probPair, auxDatum in zeroMoreProbable:
+            self.probs.append(probPair)
+            if self.auxiliary != None:
+                self.auxiliary.append(auxDatum)
+
+        for probPair, auxDatum in oneMoreProbable:
+            self.probs.append(probPair)
+            if self.auxiliary != None:
+                self.auxiliary.append(auxDatum)
 
     def mergeEquivalentSymbols(self):
         self.removeZeroProbOutput()

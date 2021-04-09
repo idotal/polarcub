@@ -49,6 +49,7 @@ class QaryMemorylessDistribution:
 
         for i in range(q-1):
             binaryMemorylessDistributions.append(BinaryMemorylessDistribution.BinaryMemorylessDistribution())
+            binaryMemorylessDistributions[i].auxiliary = []
 
         # calculate the marginals p(X = j)
         marginals = []
@@ -68,11 +69,12 @@ class QaryMemorylessDistribution:
         for x in range(q-2,-1,-1):
             probGreaterThan[x] = probGreaterThan[x+1] + marginals[x+1]
 
-        # x \equiv (x_0,x_1,...x_{q-2}), where x_j = 1 iff x = j (the vector is all zero iff x = q-1
+        # x \equiv (x_0,x_1,...x_{q-2}), where x_j = 1 iff x = j (the vector is all zero iff x = q-1)
 
         # For each y, first calculate P(X_j = b, Y=y, X^{j-1} = 0) for b in {0,1}, and then use the above calculated marginals to get 
         # P(X_j = b, Y=y | X^{j-1} = 0) = P(X_j = b, Y=y, X^{j-1} = 0) / P(X^{j-1} = 0), where P(X^{j-1} = 0) = P( X > j-1 )
 
+        yindex = 0
         for probTuple in self.probs:
 
             prev_pbzero = prev_pbone = None # to catch errors
@@ -94,6 +96,8 @@ class QaryMemorylessDistribution:
                     probPair = (pbzero/probGreaterThan[j-1], pbone/probGreaterThan[j-1])
 
                 binaryMemorylessDistributions[j].append(probPair)
+                binaryMemorylessDistributions[j].auxiliary.append({yindex})
+            yindex += 1
 
         return binaryMemorylessDistributions
 

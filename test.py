@@ -12,7 +12,13 @@ qchannel = QaryMemorylessDistribution.makeQEC(q, p)
 # print(qchannel.conditionalEntropy())
 
 oneHotChannels = qchannel.oneHotBinaryMemorylessDistributions()
+oneHotChannels[1].removeZeroProbOutput()
 
+print( "unsorted" )
+print( oneHotChannels[1] )
+
+oneHotChannels[1].sortProbs()
+print( "sorted" )
 print( oneHotChannels[1] )
 
 # qplus = qchannel.plusTransform()

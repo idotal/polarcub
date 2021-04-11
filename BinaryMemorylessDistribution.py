@@ -183,7 +183,8 @@ class BinaryMemorylessDistribution:
 
             if not isclose:
                 newProbs.append( [probPair[0], probPair[1]] )
-                newAuxiliary.append(auxDatum)
+                if self.auxiliary != None:
+                    newAuxiliary.append(auxDatum)
             else:
                 for b in range(2):
                     newProbs[-1][b] += probPair[b]
@@ -229,9 +230,10 @@ class BinaryMemorylessDistribution:
         dataList = []
         keyList = []
 
-        for probPair in self.probs:
-            datum = [probPair[0], probPair[1]] # make a copy
-            dataList.append(datum)
+        tempAux = [] if self.auxiliary == None else self.auxiliary
+        for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
+            linkedListDatum = [[probPair[0], probPair[1]], auxDatum] # make a copy
+            dataList.append(linkedListDatum)
                                
         for i in range(len(dataList)):
             key = _calcKey_degrade(_listIndexingHelper(dataList,i-1), _listIndexingHelper(dataList,i))
@@ -246,7 +248,11 @@ class BinaryMemorylessDistribution:
             
             # move probs to left element
             for b in range(2):
-                leftElement.data[b] += topOfHeap.data[b]
+                leftElement.data[0][b] += topOfHeap.data[0][b]
+
+            # update aux, if needed
+            if self.auxiliary != None:
+                leftElement.data[1] |= topOfHeap.data[1]
 
             # recalculate key of left element
             leftLeftElement = leftElement.leftElementInList
@@ -261,7 +267,14 @@ class BinaryMemorylessDistribution:
                 llh.updateKey(rightElement, key)
 
         newDistribution = BinaryMemorylessDistribution()
-        newDistribution.probs = llh.returnData()
+
+        if self.auxiliary != None:
+            newDistribution.auxiliary = []
+
+        for probPair, auxDatum in llh.returnData():
+            newDistribution.probs.append(probPair) 
+            if self.auxiliary != None:
+                newDistribution.auxiliary.append(auxDatum) 
 
         return newDistribution
 
@@ -351,11 +364,14 @@ def _calcKey_degrade(dataLeft, dataCenter): # how much would it cost to merge da
     if dataLeft == None:
         return float("inf")
 
-    assert len(dataLeft) == len(dataCenter) == 2
+    probLeft = dataLeft[0]
+    probCenter = dataCenter[0]
 
-    dataMerge = [ dataLeft[0] + dataCenter[0], dataLeft[1] + dataCenter[1] ]
+    assert len(probLeft) == len(probCenter) == 2
 
-    return hxgiveny(dataMerge) - hxgiveny(dataLeft) - hxgiveny(dataCenter)
+    probMerge = [ probLeft[0] + probCenter[0], probLeft[1] + probCenter[1] ]
+
+    return hxgiveny(probMerge) - hxgiveny(probLeft) - hxgiveny(probCenter)
 
 def _calcKey_upgrade(dataLeft, dataCenter, dataRight): # how much would it cost to split dataCenter  into dataLeft and dataRight
     if dataLeft == None or dataRight == None:

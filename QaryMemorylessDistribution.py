@@ -1,5 +1,6 @@
 import BinaryMemorylessDistribution
 from BinaryMemorylessDistribution import eta
+from math import floor
 
 class QaryMemorylessDistribution:
     def __init__(self, q):
@@ -99,6 +100,7 @@ class QaryMemorylessDistribution:
                 binaryMemorylessDistributions[j].auxiliary.append({yindex})
             yindex += 1
 
+
         return binaryMemorylessDistributions
 
     # polar transforms
@@ -139,22 +141,87 @@ class QaryMemorylessDistribution:
     # public functions for degrading/upgrading
     def degrade(self, L):
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
-        M = floor( L ** (1.0/(q-1)) )
+
+        # print("before degrade")
+        # for x in range(self.q-1):
+        #     print(oneHotBinaryMemorylessDistributions[x])
+
+        M = floor( L ** (1.0/(self.q-1)) )
         
         degradedOneHotBinaryMemorylessDistributions = []
-        for x in range(q-1):
+        for x in range(self.q-1):
             degradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].degrade(M) )
 
+        # print("after degrade")
+        # for x in range(self.q-1):
+        #     print(degradedOneHotBinaryMemorylessDistributions[x])
+
+        newDistribution = QaryMemorylessDistribution(self.q)
+        newOutputAlphabetSize = 1
+        for x in range(self.q-1):
+             newOutputAlphabetSize *= len(degradedOneHotBinaryMemorylessDistributions[x].probs)
+
+
+        allzerovector = []
+        for x in range(self.q - 1):
+            allzerovector.append(0)
+
+        yoldMappedTo = []
+        for yold in range(newOutputAlphabetSize):
+            # by default, if y is not mapped to any symbol in a one-hot channel
+            # (because of zero probability), it is mapped to symbol 0 of that channel
+            yoldMappedTo.append(allzerovector) 
+            yoldMappedTo[-1][:] = allzerovector # make sure we have a copy, not merely a reference
+
+        for x in range(self.q - 1):
+            yOneHotIndex = 0
+            for auxDatum in degradedOneHotBinaryMemorylessDistributions[x].auxiliary:
+                for yold in auxDatum:
+                    yoldMappedTo[yold][x] = yOneHotIndex
+            yOneHotIndex += 1
+                
+        allzerovector = []
+        for x in range(self.q):
+            allzerovector.append(0.0)
+
+        for ynew in range(newOutputAlphabetSize):
+            newDistribution.probs.append(allzerovector)
+            newDistribution.probs[-1][:] = allzerovector # make sure we have a copy, not merely a reference
+
+        decades = [1]
+        for x in range(2, q-1):
+            decades.append( decades[x-1] * len(degradedOneHotBinaryMemorylessDistributions[x-1].probs)
+
+        yold = 0
+        for yoldprobs in self.probs:
+            ynew = yoldToNew(yold, decades)
+            # TODO: implement above function
+
+            for x in range(self.q - 1):
+                newDistribution.probs[ynew][x] += yoldprobs[x]
+            yold += 1
+
+        newDistribution.removeZeroProbOutput()
+
+        return newDistribution
 
     def upgrade(self, L):
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
-        M = floor( L ** (1.0/(q-1)) )
+        M = floor( L ** (1.0/(self.q-1)) )
 
         upgradedOneHotBinaryMemorylessDistributions = []
-        for x in range(q-1):
+        for x in range(self.q-1):
             upgradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].upgrade(M) )
 
 
+    def removeZeroProbOutput(self):
+        newProbs = []
+
+        for probTuple in self.probs:
+            if sum(probTuple) > 0.0:
+                newProbs.append(probTuple)
+
+        self.probs = newProbs
 
 # useful channels
 def makeQSC(q, p):

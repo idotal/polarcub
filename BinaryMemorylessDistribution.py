@@ -97,8 +97,6 @@ class BinaryMemorylessDistribution:
         if self.auxiliary != None:
             self.auxiliary = newAuxiliary
 
-
-
     # sort according to p(x=0|y), in *ascending* order
     # that way, recalling the definition of Delta in upgradeLeftRightProbs, we have deltaLeftMinusRight >= 0
     def sortProbs(self):
@@ -208,7 +206,7 @@ class BinaryMemorylessDistribution:
             for y2 in self.probs:
                 newDistribution.append( [y1[0] * y2[0] + y1[1] * y2[1], y1[0] * y2[1] + y1[1] * y2[0]])
 
-        newDistribution.mergeEquivalentSymbols()
+        # newDistribution.mergeEquivalentSymbols()
 
         return newDistribution
 
@@ -221,7 +219,7 @@ class BinaryMemorylessDistribution:
                 newDistribution.append( [y1[0] * y2[0], y1[1] * y2[1]])
                 newDistribution.append( [y1[1] * y2[0], y1[0] * y2[1]])
 
-        newDistribution.mergeEquivalentSymbols()
+        # newDistribution.mergeEquivalentSymbols()
 
         return newDistribution
 
@@ -229,6 +227,8 @@ class BinaryMemorylessDistribution:
     def degrade(self, L):
         dataList = []
         keyList = []
+
+        self.mergeEquivalentSymbols()
 
         tempAux = [] if self.auxiliary == None else self.auxiliary
         for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
@@ -281,6 +281,8 @@ class BinaryMemorylessDistribution:
     def upgrade(self, L):
         dataList = []
         keyList = []
+
+        self.mergeEquivalentSymbols()
 
         for probPair in self.probs:
             datum = [probPair[0], probPair[1]] # make a copy

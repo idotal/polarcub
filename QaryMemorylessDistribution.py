@@ -91,9 +91,9 @@ class QaryMemorylessDistribution:
                 prev_pbzero, prev_pbone = pbzero, pbone
 
                 if j == 0:
-                    probPair = (pbzero, pbone)
+                    probPair = [pbzero, pbone]
                 else:
-                    probPair = (pbzero/probGreaterThan[j-1], pbone/probGreaterThan[j-1])
+                    probPair = [pbzero/probGreaterThan[j-1], pbone/probGreaterThan[j-1]]
 
                 binaryMemorylessDistributions[j].append(probPair)
                 binaryMemorylessDistributions[j].auxiliary.append({yindex})

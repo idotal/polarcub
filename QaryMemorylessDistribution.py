@@ -162,16 +162,13 @@ class QaryMemorylessDistribution:
              newOutputAlphabetSize *= len(degradedOneHotBinaryMemorylessDistributions[x].probs)
 
 
-        allzerovector = []
-        for x in range(self.q - 1):
-            allzerovector.append(0)
+        allzerovector = [0 for x in range(self.q -1)]
 
         yoldMappedTo = []
-        for yold in range(newOutputAlphabetSize):
-            # by default, if y is not mapped to any symbol in a one-hot channel
+        for yold in range(len(self.probs)):
+            # by default, if yold is not mapped to any symbol in a one-hot channel
             # (because of zero probability), it is mapped to symbol 0 of that channel
-            yoldMappedTo.append(allzerovector) 
-            yoldMappedTo[-1][:] = allzerovector # make sure we have a copy, not merely a reference
+            yoldMappedTo.append(allzerovector.copy()) 
 
         for x in range(self.q - 1):
             yOneHotIndex = 0
@@ -180,22 +177,18 @@ class QaryMemorylessDistribution:
                     yoldMappedTo[yold][x] = yOneHotIndex
             yOneHotIndex += 1
                 
-        allzerovector = []
-        for x in range(self.q):
-            allzerovector.append(0.0)
+        allzerovector = [0 for x in range(self.q)]
 
         for ynew in range(newOutputAlphabetSize):
-            newDistribution.probs.append(allzerovector)
-            newDistribution.probs[-1][:] = allzerovector # make sure we have a copy, not merely a reference
+            newDistribution.probs.append(allzerovector.copy())
 
-        decades = [1]
-        for x in range(2, q-1):
-            decades.append( decades[x-1] * len(degradedOneHotBinaryMemorylessDistributions[x-1].probs)
+        yoldToNewBasis = [1]
+        for x in range(1, self.q-1):
+            yoldToNewBasis.append(yoldToNewBasis[x-1] * len(degradedOneHotBinaryMemorylessDistributions[x-1].probs))
 
         yold = 0
         for yoldprobs in self.probs:
-            ynew = yoldToNew(yold, decades)
-            # TODO: implement above function
+            ynew = self.yoldToNew_degrade(yold, yoldMappedTo, yoldToNewBasis)
 
             for x in range(self.q - 1):
                 newDistribution.probs[ynew][x] += yoldprobs[x]
@@ -222,6 +215,22 @@ class QaryMemorylessDistribution:
                 newProbs.append(probTuple)
 
         self.probs = newProbs
+
+    def yoldToNew_degrade(self, yold, yoldMappedTo, yoldToNewBasis):
+        ynew = 0
+
+        # print( "yold = ", yold)
+
+        for x in range(self.q-1):
+            # print( "x = ", x)
+            # print( "yoldMappedTo[yold][x]" )
+            # print( yoldMappedTo[yold][x] )
+            # print( "yoldToNewBasis[x]" )
+            # print( yoldToNewBasis[x] )
+            ynew += yoldMappedTo[yold][x] * yoldToNewBasis[x]
+
+        return ynew
+
 
 # useful channels
 def makeQSC(q, p):

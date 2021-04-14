@@ -30,6 +30,10 @@ qchannel = QaryMemorylessDistribution.makeQEC(q, p)
 
 qminus = qchannel.minusTransform()
 degraded = qminus.degrade(9)
+print( "* original" )
+print( qminus )
+print( "* degraded" )
+print( degraded )
 
 # qplus = qchannel.plusTransform()
 # print(qplus.conditionalEntropy())

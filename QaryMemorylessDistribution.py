@@ -142,17 +142,12 @@ class QaryMemorylessDistribution:
     def degrade(self, L):
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
 
-        # print("before degrade")
-        # for x in range(self.q-1):
-        #     print(oneHotBinaryMemorylessDistributions[x])
-
         M = floor( L ** (1.0/(self.q-1)) )
         
         degradedOneHotBinaryMemorylessDistributions = []
         for x in range(self.q-1):
             degradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].degrade(M) )
 
-        # print("after degrade")
         # for x in range(self.q-1):
         #     print(degradedOneHotBinaryMemorylessDistributions[x])
 
@@ -160,7 +155,6 @@ class QaryMemorylessDistribution:
         newOutputAlphabetSize = 1
         for x in range(self.q-1):
              newOutputAlphabetSize *= len(degradedOneHotBinaryMemorylessDistributions[x].probs)
-
 
         allzerovector = [0 for x in range(self.q -1)]
 
@@ -170,14 +164,15 @@ class QaryMemorylessDistribution:
             # (because of zero probability), it is mapped to symbol 0 of that channel
             yoldMappedTo.append(allzerovector.copy()) 
 
+
         for x in range(self.q - 1):
             yOneHotIndex = 0
             for auxDatum in degradedOneHotBinaryMemorylessDistributions[x].auxiliary:
                 for yold in auxDatum:
                     yoldMappedTo[yold][x] = yOneHotIndex
-            yOneHotIndex += 1
-                
-        allzerovector = [0 for x in range(self.q)]
+                yOneHotIndex += 1
+
+        allzerovector = [0.0 for x in range(self.q)]
 
         for ynew in range(newOutputAlphabetSize):
             newDistribution.probs.append(allzerovector.copy())
@@ -190,7 +185,7 @@ class QaryMemorylessDistribution:
         for yoldprobs in self.probs:
             ynew = self.yoldToNew_degrade(yold, yoldMappedTo, yoldToNewBasis)
 
-            for x in range(self.q - 1):
+            for x in range(self.q):
                 newDistribution.probs[ynew][x] += yoldprobs[x]
             yold += 1
 
@@ -219,14 +214,7 @@ class QaryMemorylessDistribution:
     def yoldToNew_degrade(self, yold, yoldMappedTo, yoldToNewBasis):
         ynew = 0
 
-        # print( "yold = ", yold)
-
         for x in range(self.q-1):
-            # print( "x = ", x)
-            # print( "yoldMappedTo[yold][x]" )
-            # print( yoldMappedTo[yold][x] )
-            # print( "yoldToNewBasis[x]" )
-            # print( yoldToNewBasis[x] )
             ynew += yoldMappedTo[yold][x] * yoldToNewBasis[x]
 
         return ynew

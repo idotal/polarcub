@@ -1,0 +1,4 @@
+cython/build
+cython/*.c
+cython/*.html
+cython/*.so

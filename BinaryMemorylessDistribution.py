@@ -2,6 +2,9 @@ import math
 import sys
 import LinkedListHeap
 import itertools
+from cython_BinaryMemorylessDistribution import eta as fast_eta
+from cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
+
 
 class BinaryMemorylessDistribution:
     def __init__(self):
@@ -329,17 +332,22 @@ class BinaryMemorylessDistribution:
         return newDistribution
 
 # functions for degrade/upgrade/merge
-def eta(p):
+def slow_eta(p):
     assert 0 <= p <= 1
 
-    if p == 0 or p == 1:
+    if p == 0:
         return 0
     else:
         return -p * math.log2(p)
 
-def hxgiveny(data):
+def slow_hxgiveny(data):
     py = data[0] + data[1]
     return py * ( eta(data[0]/py) + eta(data[1]/py) )
+
+# eta = slow_eta
+# hxgiveny = slow_hxgiveny
+eta = fast_eta
+hxgiveny = fast_hxgiveny
 
 # def myisclose(a, b):
 #     return True if abs(a-b) < 100.0 * sys.float_info.epsilon else False

@@ -60,10 +60,10 @@ p = 0.11
 
 qsc = QaryMemorylessDistribution.makeQSC(q, p)
 
-print( "base capacity = ", log2(3.0) - qsc.conditionalEntropy() )
+print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
 
 n = 6
-L = 300
+L = 200
 
 channels = []
 channels.append([])

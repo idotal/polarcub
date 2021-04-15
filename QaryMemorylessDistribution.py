@@ -75,8 +75,7 @@ class QaryMemorylessDistribution:
         # For each y, first calculate P(X_j = b, Y=y, X^{j-1} = 0) for b in {0,1}, and then use the above calculated marginals to get 
         # P(X_j = b, Y=y | X^{j-1} = 0) = P(X_j = b, Y=y, X^{j-1} = 0) / P(X^{j-1} = 0), where P(X^{j-1} = 0) = P( X > j-1 )
 
-        yindex = 0
-        for probTuple in self.probs:
+        for yindex, probTuple in enumerate(self.probs):
 
             prev_pbzero = prev_pbone = None # to catch errors
 
@@ -98,7 +97,6 @@ class QaryMemorylessDistribution:
 
                 binaryMemorylessDistributions[j].append(probPair)
                 binaryMemorylessDistributions[j].auxiliary.append({yindex})
-            yindex += 1
 
 
         return binaryMemorylessDistributions
@@ -156,38 +154,34 @@ class QaryMemorylessDistribution:
         for x in range(self.q-1):
              newOutputAlphabetSize *= len(degradedOneHotBinaryMemorylessDistributions[x].probs)
 
-        allzerovector = [0 for x in range(self.q -1)]
+        allzeroindexvector = [0 for x in range(self.q -1)]
 
         yoldMappedTo = []
         for yold in range(len(self.probs)):
             # by default, if yold is not mapped to any symbol in a one-hot channel
             # (because of zero probability), it is mapped to symbol 0 of that channel
-            yoldMappedTo.append(allzerovector.copy()) 
+            yoldMappedTo.append(allzeroindexvector.copy()) 
 
 
         for x in range(self.q - 1):
-            yOneHotIndex = 0
-            for auxDatum in degradedOneHotBinaryMemorylessDistributions[x].auxiliary:
+            for yOneHotIndex, auxDatum in enumerate(degradedOneHotBinaryMemorylessDistributions[x].auxiliary):
                 for yold in auxDatum:
                     yoldMappedTo[yold][x] = yOneHotIndex
-                yOneHotIndex += 1
 
-        allzerovector = [0.0 for x in range(self.q)]
+        allzeroprobvector = [0.0 for x in range(self.q)]
 
         for ynew in range(newOutputAlphabetSize):
-            newDistribution.probs.append(allzerovector.copy())
+            newDistribution.probs.append(allzeroprobvector.copy())
 
         yoldToNewBasis = [1]
         for x in range(1, self.q-1):
             yoldToNewBasis.append(yoldToNewBasis[x-1] * len(degradedOneHotBinaryMemorylessDistributions[x-1].probs))
 
-        yold = 0
-        for yoldprobs in self.probs:
+        for yold, yoldprobs in enumerate(self.probs):
             ynew = self.yoldToNew_degrade(yold, yoldMappedTo, yoldToNewBasis)
 
             for x in range(self.q):
                 newDistribution.probs[ynew][x] += yoldprobs[x]
-            yold += 1
 
         newDistribution.removeZeroProbOutput()
 

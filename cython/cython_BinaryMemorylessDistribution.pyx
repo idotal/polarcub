@@ -10,9 +10,9 @@ cpdef float eta(float p):
     else:
         return -p * log2(p)
 
-cpdef float hxgiveny(data):
-    cdef float d0 = data[0]
-    cdef float d1 = data[1]
+cpdef double hxgiveny(list data):
+    cdef double d0 = data[0]
+    cdef double d1 = data[1]
     
-    cdef float py = d0 + d1
+    cdef double py = d0 + d1
     return py * ( eta(d0/py) + eta(d1/py) )

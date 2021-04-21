@@ -146,13 +146,9 @@ class QaryMemorylessDistribution:
         for x in range(self.q-1):
             degradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].degrade(M) )
 
-        # for x in range(self.q-1):
-        #     print(degradedOneHotBinaryMemorylessDistributions[x])
-
         newDistribution = QaryMemorylessDistribution(self.q)
-        newOutputAlphabetSize = 1
-        for x in range(self.q-1):
-             newOutputAlphabetSize *= len(degradedOneHotBinaryMemorylessDistributions[x].probs)
+
+        newOutputAlphabetSize = self.calcNewOutputAlphabetSize(degradedOneHotBinaryMemorylessDistributions)
 
         allzeroindexvector = [0 for x in range(self.q -1)]
 
@@ -173,12 +169,10 @@ class QaryMemorylessDistribution:
         for ynew in range(newOutputAlphabetSize):
             newDistribution.probs.append(allzeroprobvector.copy())
 
-        yoldToNewBasis = [1]
-        for x in range(1, self.q-1):
-            yoldToNewBasis.append(yoldToNewBasis[x-1] * len(degradedOneHotBinaryMemorylessDistributions[x-1].probs))
+        conversionToYNewMultipliers = self.calcConversionToYNewMultipliers(degradedOneHotBinaryMemorylessDistributions)
 
         for yold, yoldprobs in enumerate(self.probs):
-            ynew = self.yoldToNew_degrade(yold, yoldMappedTo, yoldToNewBasis)
+            ynew = self.yoldToNew_degrade(yold, yoldMappedTo, conversionToYNewMultipliers)
 
             for x in range(self.q):
                 newDistribution.probs[ynew][x] += yoldprobs[x]
@@ -195,6 +189,25 @@ class QaryMemorylessDistribution:
         for x in range(self.q-1):
             upgradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].upgrade(M) )
 
+        newDistribution = QaryMemorylessDistribution(self.q)
+
+        newOutputAlphabetSize = self.calcNewOutputAlphabetSize(upgradedOneHotBinaryMemorylessDistributions)
+
+        # stopped here
+
+    def calcConversionToYNewMultipliers(self, oneHotBinaryMemorylessDistributions):
+        conversionToYNewMultipliers = [1]
+        for x in range(1, self.q-1):
+            conversionToYNewMultipliers.append(conversionToYNewMultipliers[x-1] * len(oneHotBinaryMemorylessDistributions[x-1].probs))
+
+        return conversionToYNewMultipliers
+
+    def calcNewOutputAlphabetSize(self, oneHotBinaryMemorylessDistributions):
+        newOutputAlphabetSize = 1
+        for x in range(self.q-1):
+             newOutputAlphabetSize *= len(oneHotBinaryMemorylessDistributions[x].probs)
+
+        return newOutputAlphabetSize
 
     def removeZeroProbOutput(self):
         newProbs = []
@@ -205,11 +218,11 @@ class QaryMemorylessDistribution:
 
         self.probs = newProbs
 
-    def yoldToNew_degrade(self, yold, yoldMappedTo, yoldToNewBasis):
+    def yoldToNew_degrade(self, yold, yoldMappedTo, conversionToYNewMultipliers):
         ynew = 0
 
         for x in range(self.q-1):
-            ynew += yoldMappedTo[yold][x] * yoldToNewBasis[x]
+            ynew += yoldMappedTo[yold][x] * conversionToYNewMultipliers[x]
 
         return ynew
 

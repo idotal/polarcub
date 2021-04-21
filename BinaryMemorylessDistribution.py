@@ -2,8 +2,8 @@ import math
 import sys
 import LinkedListHeap
 import itertools
-from cython_BinaryMemorylessDistribution import eta as fast_eta
-from cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
+from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
+from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
 
 use_fast = True
 # use_fast = False
@@ -93,11 +93,6 @@ class BinaryMemorylessDistribution:
                 newProbs.append(probPair)
                 newAuxiliary.append(auxDatum)
 
-        # for probPair in self.probs:
-        #     if sum(probPair) > 0.0:
-        #         newProbs.append(probPair)
-
-
         self.probs = newProbs
         if self.auxiliary != None:
             self.auxiliary = newAuxiliary
@@ -129,13 +124,6 @@ class BinaryMemorylessDistribution:
                 zeroMoreProbable.append((probPair, auxDatum))
             else:
                 oneMoreProbable.append((probPair, auxDatum))
-        
-        # sort probs according to p(x=0|y) 
-
-        # doesn't work in python3, so commented out
-        # This is probably for the best, since by defining the functions explicitly I get an improvement in performance
-        # zeroMoreProbable.sort(key = lambda probPair, auxDatum: probPair[1] / sum(probPair) )
-        # oneMoreProbable.sort(key = lambda probPair, auxDatum: -probPair[0] / sum(probPair) )
 
         def zeroMoreProbableKey(tup):
             probPair = tup[0]
@@ -193,7 +181,7 @@ class BinaryMemorylessDistribution:
                     newProbs[-1][b] += probPair[b]
 
                     if self.auxiliary != None:
-                        newAuxiliary[-1] |= auxDatum
+                        newAuxiliary[-1] |= auxDatum # TODO: change this by adding a function that merges the aux as needed (degrade/upgrade)!
 
         self.probs = newProbs
 

@@ -313,7 +313,7 @@ class BinaryMemorylessDistribution:
 
         tempAux = [] if self.auxiliary == None else self.auxiliary
         for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
-            linkedListDatum = [[probPair[0], probPair[1]],[{}, auxDatum, {}]] # make a copy
+            linkedListDatum = [[probPair[0], probPair[1]],[set(), auxDatum, set()]] # make a copy
             dataList.append(linkedListDatum)
                                
         for i in range(len(dataList)):
@@ -323,9 +323,6 @@ class BinaryMemorylessDistribution:
         llh = LinkedListHeap.LinkedListHeap(keyList, dataList)
 
         while llh.numberOfElements() > L:
-            # print("llh.numberOfElements = ", llh.numberOfElements())
-            # print(llh)
-
             topOfHeap = llh.extractHeapMin()
             leftElement = topOfHeap.leftElementInList
             rightElement = topOfHeap.rightElementInList
@@ -336,6 +333,15 @@ class BinaryMemorylessDistribution:
             for b in range(2):
                 leftElement.data[0][b] += probMergeLeft[b]
                 rightElement.data[0][b] += probMergeRight[b]
+
+            # update aux, if needed
+            leftEnum = 0
+            centerEnum = 1
+            rightEnum = 2
+
+            if self.auxiliary != None:
+                leftElement.data[1][rightEnum] |= topOfHeap.data[1][centerEnum] | topOfHeap.data[1][rightEnum]
+                rightElement.data[1][leftEnum] |= topOfHeap.data[1][centerEnum] | topOfHeap.data[1][leftEnum]
 
             # recalculate key of left element
             leftLeftElement = leftElement.leftElementInList

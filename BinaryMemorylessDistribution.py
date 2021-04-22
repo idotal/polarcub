@@ -338,7 +338,7 @@ class BinaryMemorylessDistribution:
             leftEnum = 0
             centerEnum = 1
             rightEnum = 2
-
+        
             if self.auxiliary != None:
                 leftElement.data[1][rightEnum] |= topOfHeap.data[1][centerEnum] | topOfHeap.data[1][rightEnum]
                 rightElement.data[1][leftEnum] |= topOfHeap.data[1][centerEnum] | topOfHeap.data[1][leftEnum]

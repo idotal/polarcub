@@ -45,27 +45,27 @@ class QaryMemorylessDistribution:
         return entropySum
 
     def oneHotBinaryMemorylessDistributions(self):
+        """Return q-1 one-hot binary channels.
+        
+        The probs list of a channel contains the corresponding probabilities.
+        The auxiliary list of a channel contains sets, each set containing a single element: the index of the corresponding output letter in the q-ary channel.
+        """
+
         binaryMemorylessDistributions = []
         q = self.q
 
+        # create q-1 "empty" channels
         for i in range(q-1):
             binaryMemorylessDistributions.append(BinaryMemorylessDistribution.BinaryMemorylessDistribution())
             binaryMemorylessDistributions[i].auxiliary = []
 
         # calculate the marginals p(X = j)
-        marginals = []
-
-        for x in range(q):
-            tempSum = 0.0
-            for probTuple in self.probs:
-                tempSum += probTuple[x]
-            marginals.append(tempSum)
+        marginals = self.calcXMarginals()
 
         # calculate p(X > j)
         probGreaterThan = []
         for x in range(q):
             probGreaterThan.append(0)
-
 
         for x in range(q-2,-1,-1):
             probGreaterThan[x] = probGreaterThan[x+1] + marginals[x+1]
@@ -98,8 +98,19 @@ class QaryMemorylessDistribution:
                 binaryMemorylessDistributions[j].append(probPair)
                 binaryMemorylessDistributions[j].auxiliary.append({yindex})
 
-
         return binaryMemorylessDistributions
+
+    def calcXMarginals(self):
+        """calculate the marginals p(X = j)"""
+        marginals = []
+
+        for x in range(self.q):
+            tempSum = 0.0
+            for probTuple in self.probs:
+                tempSum += probTuple[x]
+            marginals.append(tempSum)
+
+        return marginals
 
     # polar transforms
     def minusTransform(self):

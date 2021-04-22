@@ -4,7 +4,7 @@ cdef extern from "math.h":
         double log2(double x) nogil
 
 # functions for degrade/upgrade/merge
-cpdef float eta(float p):
+cpdef double eta(double p):
     if p == 0:
         return 0
     else:

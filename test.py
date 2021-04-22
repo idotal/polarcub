@@ -67,5 +67,5 @@ def qdegrade():
     
     print( "average capacity = ", log2(3.0) - entropySum / 2**(n-1) )
 
-qdegrade()
+bdegrade()
 # cProfile.run('qdegrade()')

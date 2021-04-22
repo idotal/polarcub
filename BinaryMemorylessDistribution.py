@@ -84,6 +84,10 @@ class BinaryMemorylessDistribution:
             probPair[:] = [ prob / probSum for prob in probPair ]
 
     def removeZeroProbOutput(self):
+        """remove output symbols with probability zero.
+
+        If the auxiliary list is not None, we simply drop entries corresponding to removed letters.
+        """
         newProbs = []
         newAuxiliary = []
 
@@ -97,9 +101,11 @@ class BinaryMemorylessDistribution:
         if self.auxiliary != None:
             self.auxiliary = newAuxiliary
 
-    # sort according to p(x=0|y), in *ascending* order
-    # that way, recalling the definition of Delta in upgradeLeftRightProbs, we have deltaLeftMinusRight >= 0
     def sortProbs(self):
+        """Sort according to p(x=0|y), in *ascending* order.
+
+        This way, recalling the definition of Delta in upgradeLeftRightProbs, we have deltaLeftMinusRight >= 0.
+        """
     
         # for numerical stability, split into list with p(x=0|y) > 0.5 and p(x=0|y) <= 0.5
         zeroMoreProbable = []
@@ -153,6 +159,11 @@ class BinaryMemorylessDistribution:
                 self.auxiliary.append(auxDatum)
 
     def mergeEquivalentSymbols(self):
+        """Merge output symbols with very close LLRs into a single output letter.
+
+        If the auxiliary list is not None, it is assumed to contain sets (a set for each output letter). Merging results in the union of these sets.
+        The probabilities are normalized at the end, for good measure.
+        """
         self.removeZeroProbOutput()
 
         self.sortProbs()
@@ -181,7 +192,7 @@ class BinaryMemorylessDistribution:
                     newProbs[-1][b] += probPair[b]
 
                     if self.auxiliary != None:
-                        newAuxiliary[-1] |= auxDatum # TODO: change this by adding a function that merges the aux as needed (degrade/upgrade)!
+                        newAuxiliary[-1] |= auxDatum 
 
         self.probs = newProbs
 
@@ -218,10 +229,17 @@ class BinaryMemorylessDistribution:
 
     # public functions for degrading/upgrading
     def degrade(self, L):
+        """Degrade into a new channel, containing at most L output letters.
+
+        If auxiliary is not None, it is assumed to contain a list of sets, a set for each output symbol. The new channel contains a corresponding auxiliary list, also containing sets, one for each output symbol. Each such set is the union of the sets corresponding to the output symbols in the original channel which have been merged together into the output symbol of the new channel.
+        """
         dataList = []
         keyList = []
 
+        # Merge, and also sort according to LLR
         self.mergeEquivalentSymbols()
+
+        # note that linkedListDatum = [[probPair[0], probPair[1]], auxDatum]
 
         tempAux = [] if self.auxiliary == None else self.auxiliary
         for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
@@ -272,9 +290,23 @@ class BinaryMemorylessDistribution:
         return newDistribution
 
     def upgrade(self, L):
+        """Upgrade into a new channel, containing at most L output letters.
+
+        We first remove output letters with zero probability, sort according to ascending order of p(x=0|y), merge symbols with the same LLR, and then upgrade. That is, if the original order to the symbols was
+        y0,y1,y2,...
+        Then the new symbols z are also sorted according to p(x=0|z). Denote these as
+        z0,z1,z2
+        Since each zi has the same LLR as some yj, we can merge the above two figures into, say
+        z0=y0,y1,y2,z1={y3,y4},y5,y6,z3=y8
+        where y3 and y4 have been merged together by the preliminary merge operation, since they had the same LLR. Note that in the above "=" means "same LLR".
+
+        
+        If auxiliary is not None, it is assumed to contain a list of sets, a set for each output symbol. The new channel contains a corresponding auxiliary list, each element is a list of three sets, [sybmolsLeft, symbolsCenter, symbolsRight]. The set symbolsCenter contains the indices of the symbols in the original channel having the same LLR as the corresponding symbol in the new channel. That is, for the above example, symbolsCenter(z1) = set(y3) \cup set(y4). Continuing the above example, symbolsLeft(z1) = set(y1) \cup set(y2) and sybmolsRight(z1) = set(y5) \cup set(y6). Note that the symbolsCenter set is always non-empty, the sets symbolsLeft and symbolsRight might be empty, and are always empty for the first and last output letters, respectively.
+        """
         dataList = []
         keyList = []
 
+        # Merge, and also sort according to LLR
         self.mergeEquivalentSymbols()
 
         for probPair in self.probs:

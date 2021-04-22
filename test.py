@@ -23,10 +23,10 @@ def bdegrade():
     for m in range(1,n):
         channels.append([])
         for channel in channels[m-1]:
-            channels[m].append(channel.minusTransform().degrade(L))
-            channels[m].append(channel.plusTransform().degrade(L))
-            # channels[m].append(channel.minusTransform().upgrade(L))
-            # channels[m].append(channel.plusTransform().upgrade(L))
+            # channels[m].append(channel.minusTransform().degrade(L))
+            # channels[m].append(channel.plusTransform().degrade(L))
+            channels[m].append(channel.minusTransform().upgrade(L))
+            channels[m].append(channel.plusTransform().upgrade(L))
     
     entropySum = 0.0
     
@@ -67,5 +67,20 @@ def qdegrade():
     
     print( "average capacity = ", log2(3.0) - entropySum / 2**(n-1) )
 
+def upgradeSimple():
+
+    p = 0.11
+    bsc = BinaryMemorylessDistribution.makeBSC(p)
+    transformed = bsc
+
+    transformed = transformed.plusTransform()
+    transformed = transformed.minusTransform()
+
+    print(transformed)
+    upgraded = transformed.upgrade(2)
+    print(upgraded)
+
 bdegrade()
+# upgradeSimple()
+
 # cProfile.run('qdegrade()')

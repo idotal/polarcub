@@ -309,9 +309,12 @@ class BinaryMemorylessDistribution:
         # Merge, and also sort according to LLR
         self.mergeEquivalentSymbols()
 
-        for probPair in self.probs:
-            datum = [probPair[0], probPair[1]] # make a copy
-            dataList.append(datum)
+        # note that linkedListDatum = [[probPair[0], probPair[1]], [sybmolsLeft, symbolsCenter, symbolsRight]]
+
+        tempAux = [] if self.auxiliary == None else self.auxiliary
+        for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
+            linkedListDatum = [[probPair[0], probPair[1]],[{}, auxDatum, {}]] # make a copy
+            dataList.append(linkedListDatum)
                                
         for i in range(len(dataList)):
             key = _calcKey_upgrade(_listIndexingHelper(dataList,i-1), _listIndexingHelper(dataList,i), _listIndexingHelper(dataList,i+1))
@@ -327,12 +330,12 @@ class BinaryMemorylessDistribution:
             leftElement = topOfHeap.leftElementInList
             rightElement = topOfHeap.rightElementInList
             
-            dataMergeLeft, dataMergeRight = upgradedLeftRightProbs(leftElement.data, topOfHeap.data, rightElement.data)
+            probMergeLeft, probMergeRight = upgradedLeftRightProbs(leftElement.data, topOfHeap.data, rightElement.data)
 
             # move probs to left and right elements
             for b in range(2):
-                leftElement.data[b] += dataMergeLeft[b]
-                rightElement.data[b] += dataMergeRight[b]
+                leftElement.data[0][b] += probMergeLeft[b]
+                rightElement.data[0][b] += probMergeRight[b]
 
             # recalculate key of left element
             leftLeftElement = leftElement.leftElementInList
@@ -349,7 +352,14 @@ class BinaryMemorylessDistribution:
                 llh.updateKey(rightElement, key)
 
         newDistribution = BinaryMemorylessDistribution()
-        newDistribution.probs = llh.returnData()
+
+        if self.auxiliary != None:
+            newDistribution.auxiliary = []
+
+        for probPair, auxDatum in llh.returnData():
+            newDistribution.probs.append(probPair) 
+            if self.auxiliary != None:
+                newDistribution.auxiliary.append(auxDatum) 
 
         return newDistribution
 
@@ -409,11 +419,15 @@ def _calcKey_upgrade(dataLeft, dataCenter, dataRight): # how much would it cost 
     if dataLeft == None or dataRight == None:
         return float("inf")
 
-    assert len(dataLeft) == len(dataCenter) == len(dataRight) == 2
+    probLeft = dataLeft[0]
+    probCenter = dataCenter[0]
+    probRight = dataRight[0]
 
-    dataMergeLeft, dataMergeRight = upgradedLeftRightProbs(dataLeft, dataCenter, dataRight)
+    assert len(probLeft) == len(probCenter) == len(probRight) == 2
 
-    return hxgiveny(dataCenter) - hxgiveny(dataMergeLeft) - hxgiveny(dataMergeRight)  
+    probMergeLeft, probMergeRight = upgradedLeftRightProbs(dataLeft, dataCenter, dataRight)
+
+    return hxgiveny(probCenter) - hxgiveny(probMergeLeft) - hxgiveny(probMergeRight)  
 
 def _listIndexingHelper(l, i):
     return l[i] if (0 <= i < len(l)) else None
@@ -422,19 +436,23 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
     # pi = p(y,x=0) + p(y,x=1)
     # Delta = (p(y,x=0) - p(y,x=1))/pi
     # piCenter is split into thetaLeft * piCenter and thetaRight * piCenter
+    
+    probLeft = dataLeft[0]
+    probCenter = dataCenter[0]
+    probRight = dataRight[0]
 
-    piLeft = sum(dataLeft)
-    piCenter = sum(dataCenter)
-    piRight = sum(dataRight)
+    piLeft = sum(probLeft)
+    piCenter = sum(probCenter)
+    piRight = sum(probRight)
 
     normalizedLeft = []
     normalizedCenter = []
     normalizedRight = []
 
     for b in range(2):
-        normalizedLeft.append(dataLeft[b]/piLeft)
-        normalizedCenter.append(dataCenter[b]/piCenter)
-        normalizedRight.append(dataRight[b]/piRight)
+        normalizedLeft.append(probLeft[b]/piLeft)
+        normalizedCenter.append(probCenter[b]/piCenter)
+        normalizedRight.append(probRight[b]/piRight)
 
     # calculate Delta_left - Delta_right
     # split into cases, for numerical stability
@@ -480,12 +498,12 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
 
     assert(0.0 < thetaLeft < 1.0 and 0.0 < thetaRight < 1.0)
 
-    dataMergeLeft = []
-    dataMergeRight = []
+    probMergeLeft = []
+    probMergeRight = []
 
     for b in range(2):
-        dataMergeLeft.append(thetaLeft * piCenter * normalizedLeft[b])
-        dataMergeRight.append(thetaRight * piCenter * normalizedRight[b])
+        probMergeLeft.append(thetaLeft * piCenter * normalizedLeft[b])
+        probMergeRight.append(thetaRight * piCenter * normalizedRight[b])
 
-    return dataMergeLeft, dataMergeRight 
+    return probMergeLeft, probMergeRight 
 

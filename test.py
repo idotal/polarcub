@@ -141,13 +141,15 @@ def qupgradeSimple():
     transformed = qsc
 
     transformed = transformed.plusTransform()
-    transformed = transformed.minusTransform()
+    # transformed = transformed.minusTransform()
 
     # print(transformed)
     oneHot = transformed.oneHotBinaryMemorylessDistributions()
 
-    print( oneHot[0] )
-    upgraded = oneHot[0].upgrade(5)
+    upgraded = transformed.upgrade(9)
+
+    # print( oneHot[0] )
+    # upgraded = oneHot[0].upgrade(3)
 
     print( upgraded )
     # upgraded = transformed.upgrade(3)

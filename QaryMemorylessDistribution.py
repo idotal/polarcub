@@ -112,6 +112,10 @@ class QaryMemorylessDistribution:
 
         return marginals
 
+    def calcYMarginal(self, y):
+        """calculate the marginal p(Y = y)"""
+        return sum(self.probs[y])
+
     # polar transforms
     def minusTransform(self):
         
@@ -204,7 +208,50 @@ class QaryMemorylessDistribution:
 
         newOutputAlphabetSize = self.calcNewOutputAlphabetSize(upgradedOneHotBinaryMemorylessDistributions)
 
-        # stopped here
+        # yoldMappedTo[yold][x][lcr], where lcr=0,1,2 corresponds to left, center, right
+        yoldMappedTo = []
+        for yold in range(len(self.probs)):
+            yoldMappedTo.append([[None for lcr in range(3)] for x in range(self.q-1)]) 
+
+        for x in range(self.q - 1):
+            for yOneHotIndex, auxDatum in enumerate(upgradedOneHotBinaryMemorylessDistributions[x].auxiliary):
+                for lcr in range(3): #left-center-right
+                    if auxDatum[lcr] == None:
+                        continue
+                    else:
+                        for yold in auxDatum[lcr]:
+                            assert( yoldMappedTo[yold][x][lcr] == None )
+                            yoldMappedTo[yold][x][lcr] = yOneHotIndex
+
+        allzeroprobvector = [0.0 for x in range(self.q)]
+
+        for ynew in range(newOutputAlphabetSize):
+            newDistribution.probs.append(allzeroprobvector.copy())
+
+        conversionToYNewMultipliers = self.calcConversionToYNewMultipliers(upgradedOneHotBinaryMemorylessDistributions)
+
+        for yold in range(len(self.probs)):
+            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers )
+            # ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, conversionToYNewMultipliers)
+            #
+            # for x in range(self.q):
+            #     newDistribution.probs[ynew][x] += yoldprobs[x]
+
+        newDistribution.removeZeroProbOutput()
+
+        return newDistribution
+
+    def addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers ):
+        yMarginal = calcYMarginal(yold)
+
+        for lcrvec in lcrItterator(yold): # a vector of length q-1, where each entry is either 0 (left), 1 (center), or 2 (right)
+            ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers)
+            for x in range(q): # add to newDistribution[ynew][x]
+                # TODO: stopped here
+
+
+
+
 
     def calcConversionToYNewMultipliers(self, oneHotBinaryMemorylessDistributions):
         conversionToYNewMultipliers = [1]
@@ -237,6 +284,13 @@ class QaryMemorylessDistribution:
 
         return ynew
 
+    def yoldToNew_upgrade(self, yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers):
+        ynew = 0
+
+        for x in range(self.q-1):
+            ynew += yoldMappedTo[yold][x][lcrvec] * conversionToYNewMultipliers[x]
+
+        return ynew
 
 # useful channels
 def makeQSC(q, p):

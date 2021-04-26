@@ -2,6 +2,11 @@ import BinaryMemorylessDistribution
 from BinaryMemorylessDistribution import eta
 from math import floor
 
+# constants
+lcrLeft = 0
+lcrCenter = 1
+lcrRight = 2
+
 class QaryMemorylessDistribution:
     def __init__(self, q):
         self.probs = []  # probs[yindex][xindex]
@@ -231,7 +236,7 @@ class QaryMemorylessDistribution:
         conversionToYNewMultipliers = self.calcConversionToYNewMultipliers(upgradedOneHotBinaryMemorylessDistributions)
 
         for yold in range(len(self.probs)):
-            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers )
+            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers)
             # ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, conversionToYNewMultipliers)
             #
             # for x in range(self.q):
@@ -241,17 +246,48 @@ class QaryMemorylessDistribution:
 
         return newDistribution
 
-    def addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers ):
-        yMarginal = calcYMarginal(yold)
+    def addToNewDistribution_upgrade(self, yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers):
+        yMarginal = self.calcYMarginal(yold)
+        
+        lcrvec = self.initializeLCRVector(yold, yoldMappedTo)
 
-        for lcrvec in lcrItterator(yold): # a vector of length q-1, where each entry is either 0 (left), 1 (center), or 2 (right)
+        while True:
             ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers)
             for x in range(q): # add to newDistribution[ynew][x]
                 # TODO: stopped here
+                pass
 
+            if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:
+                break
 
+    def initializeLCRVector(self,yold,yoldMappedTo):
+        lcrvec = []
 
+        for i in range(self.q-1):
+            if yoldMappedTo[yold][lcrLeft] == None:
+                assert(yoldMappedTo[yold][i][lcrRight] == None)
+                lcrvec.append(lcrCenter)
+            else:
+                assert(yoldMappedTo[yold][i][lcrCenter] == None and yoldMappedTo[yold][i][lcrRight] != None)
+                lcrvec.append(lcrLeft)
+        return lcrvec
 
+    def iterateLCRVector(self,yold,yoldMappedTo,lcrvec):
+
+        for i in range(self.q-1):
+            if lcrvec[i] == lcrLeft:
+                assert(yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
+                lcrvec[i] == lcrRight
+                return True
+            elif lcrvec[i] == lcrRight:
+                assert(yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
+                lcrvec[i] == lcrLeft
+                # and don't return (continue to the next i)
+            else: # lcrvec[i] == lcrCenter
+                assert( lcrvec[i] == lcrCenter )
+                assert(yoldMappedTo[yold][i][lcrLeft] == None and yoldMappedTo[yold][i][lcrRight] == None)
+                # and don't return (continue to the next i)
+        return False
 
     def calcConversionToYNewMultipliers(self, oneHotBinaryMemorylessDistributions):
         conversionToYNewMultipliers = [1]
@@ -288,7 +324,7 @@ class QaryMemorylessDistribution:
         ynew = 0
 
         for x in range(self.q-1):
-            ynew += yoldMappedTo[yold][x][lcrvec] * conversionToYNewMultipliers[x]
+            ynew += yoldMappedTo[yold][x][lcrvec[x]] * conversionToYNewMultipliers[x]
 
         return ynew
 

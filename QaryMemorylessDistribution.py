@@ -253,7 +253,7 @@ class QaryMemorylessDistribution:
 
         while True:
             ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers)
-            for x in range(q): # add to newDistribution[ynew][x]
+            for x in range(self.q): # add to newDistribution[ynew][x]
                 # TODO: stopped here
                 pass
 
@@ -264,7 +264,7 @@ class QaryMemorylessDistribution:
         lcrvec = []
 
         for i in range(self.q-1):
-            if yoldMappedTo[yold][lcrLeft] == None:
+            if yoldMappedTo[yold][i][lcrLeft] == None:
                 assert(yoldMappedTo[yold][i][lcrRight] == None)
                 lcrvec.append(lcrCenter)
             else:
@@ -277,11 +277,11 @@ class QaryMemorylessDistribution:
         for i in range(self.q-1):
             if lcrvec[i] == lcrLeft:
                 assert(yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
-                lcrvec[i] == lcrRight
+                lcrvec[i] = lcrRight
                 return True
             elif lcrvec[i] == lcrRight:
                 assert(yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
-                lcrvec[i] == lcrLeft
+                lcrvec[i] = lcrLeft
                 # and don't return (continue to the next i)
             else: # lcrvec[i] == lcrCenter
                 assert( lcrvec[i] == lcrCenter )

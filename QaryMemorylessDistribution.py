@@ -54,6 +54,7 @@ class QaryMemorylessDistribution:
         
         The probs list of a channel contains the corresponding probabilities.
         The auxiliary list of a channel contains sets, each set containing a single element: the index of the corresponding output letter in the q-ary channel.
+        Note that a binary channel may contain output letters with probability zero.
         """
 
         binaryMemorylessDistributions = []
@@ -235,10 +236,8 @@ class QaryMemorylessDistribution:
 
         conversionToYNewMultipliers = self.calcConversionToYNewMultipliers(upgradedOneHotBinaryMemorylessDistributions)
 
-        origianlOneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions(allowZeroProbs=True)
-
         for yold in range(len(self.probs)):
-            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
+            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, oneHotBinaryMemorylessDistributions)
 
         newDistribution.removeZeroProbOutput()
 

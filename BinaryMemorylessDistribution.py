@@ -513,3 +513,9 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
 
     return probMergeLeft, probMergeRight 
 
+    def probXGivenY(self, x,y):
+        return probs[y][x] / sum(probs[y])
+
+    def calcYMarginal(self, y):
+        """calculate the marginal p(Y = y)"""
+        return sum(self.probs[y])

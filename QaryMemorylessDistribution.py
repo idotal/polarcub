@@ -235,30 +235,68 @@ class QaryMemorylessDistribution:
 
         conversionToYNewMultipliers = self.calcConversionToYNewMultipliers(upgradedOneHotBinaryMemorylessDistributions)
 
+        origianlOneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions(allowZeroProbs=True)
+
         for yold in range(len(self.probs)):
-            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers)
-            # ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, conversionToYNewMultipliers)
-            #
-            # for x in range(self.q):
-            #     newDistribution.probs[ynew][x] += yoldprobs[x]
+            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
         newDistribution.removeZeroProbOutput()
 
         return newDistribution
 
-    def addToNewDistribution_upgrade(self, yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers):
-        yMarginal = self.calcYMarginal(yold)
+    def addToNewDistribution_upgrade(self, yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions):
+        yoldMarginal = self.calcYMarginal(yold)
         
         lcrvec = self.initializeLCRVector(yold, yoldMappedTo)
 
         while True:
             ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers)
+            # we've picked yold, and now ynew (through lcrvec). 
+            x_ynew_yold_probs = calc_x_ynew_yold_probs(self, yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
+
             for x in range(self.q): # add to newDistribution[ynew][x]
                 # TODO: stopped here
-                pass
+                newDistribution.probs[ynew][x] += prob
 
             if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:
                 break
+
+    def calc_probs_of_x_ynew_given_yold(self, yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions):
+        '''For each 0 <= i < q-1, calculate p(x=0,yold, ynew[i]) and p(x=1,yold, ynew[i])
+        '''
+        probs = []
+
+        for i in range(self.q - 1):
+            upgradedBinDist = upgradedOneHotBinaryMemorylessDistributions[i]
+            originalBinDist = oneHotBinaryMemorylessDistributions[i]
+            tempProbs = []
+
+            if originalBinDist.calcYMarginal(yold) == 0.0:
+                tempProbs = [-1000.0, -1000.0] # to catch errors
+
+            elif lcrvec[i] == lcrCenter:
+                for x in range(2):
+                    # yold implies ynew[i], with probability 1
+                    tempprobs.append(originalBinDist.probXGivenY(x,yold))
+            else:
+                for x in range(2):
+                    ynew = yoldMappedTo[yold][lcrvec[i]]
+                    otherynew = yoldMappedTo[yold][lcrLeft if lcrvec[i] == lcrRight else lcrRight]
+
+                    fractionMultiplier = upgradedDist.probXGivenY(x,ynew)
+
+                    if upgradedDist.probXGivenY(x,otherynew) < 0.5:
+                        denominator = upgradedBinDist.probXGivenY(x,ynew) - upgradedBinDist.probXGivenY(x,otherynew)
+                        numerator = originalBinDist.probXGivenY(x,yold) - upgradedBinDist.probXGivenY(x,otherynew)
+                    else:
+                        denominator = upgradedBinDist.probXGivenY(1-x,otherynew) - upgradedBinDist.probXGivenY(1-x,ynew)
+                        numerator = upgradedBinDist.probXGivenY(1-x,otherynew) - originalBinDist.probXGivenY(1-x,yold) 
+
+                    tempProbs.append(fractionMultiplier * numerator / denominator)
+
+            probs.append(tempProbs)
+
+        return probs
 
     def initializeLCRVector(self,yold,yoldMappedTo):
         lcrvec = []
@@ -323,8 +361,8 @@ class QaryMemorylessDistribution:
     def yoldToNew_upgrade(self, yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers):
         ynew = 0
 
-        for x in range(self.q-1):
-            ynew += yoldMappedTo[yold][x][lcrvec[x]] * conversionToYNewMultipliers[x]
+        for i in range(self.q-1):                            
+            ynew += yoldMappedTo[yold][i][lcrvec[i]] * conversionToYNewMultipliers[i]
 
         return ynew
 

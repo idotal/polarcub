@@ -255,10 +255,14 @@ class QaryMemorylessDistribution:
 
             zeroTilNowProb = 1.0
             for x in range(self.q): # add to newDistribution[ynew][x]
-                prob = zeroTilNowProb * x_ynew_yold_probs[x][1]  if x < self.q - 1 else zeroTilNowProb
+                if x < self.q - 1:
+                    prob = zeroTilNowProb * x_ynew_yold_probs[x][1] 
+                    zeroTilNowProb *= x_ynew_yold_probs[x][0]
+                else:
+                    prob = zeroTilNowProb
+
                 prob *= yoldMarginal
                 newDistribution.probs[ynew][x] += prob
-                zeroTilNowProb *= x_ynew_yold_probs[x][0]
 
 
             if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:
@@ -283,12 +287,13 @@ class QaryMemorylessDistribution:
                     tempProbs.append(originalBinDist.probXGivenY(x,yold))
             else:
                 for x in range(2):
-                    ynew = yoldMappedTo[yold][lcrvec[i]]
-                    otherynew = yoldMappedTo[yold][lcrLeft if lcrvec[i] == lcrRight else lcrRight]
+                    ynew = yoldMappedTo[yold][i][lcrvec[i]]
 
-                    fractionMultiplier = upgradedDist.probXGivenY(x,ynew)
+                    otherynew = yoldMappedTo[yold][i][lcrLeft if lcrvec[i] == lcrRight else lcrRight]
 
-                    if upgradedDist.probXGivenY(x,otherynew) < 0.5:
+                    fractionMultiplier = upgradedBinDist.probXGivenY(x,ynew)
+
+                    if upgradedBinDist.probXGivenY(x,otherynew) < 0.5:
                         denominator = upgradedBinDist.probXGivenY(x,ynew) - upgradedBinDist.probXGivenY(x,otherynew)
                         numerator = originalBinDist.probXGivenY(x,yold) - upgradedBinDist.probXGivenY(x,otherynew)
                     else:

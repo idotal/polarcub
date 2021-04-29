@@ -253,16 +253,20 @@ class QaryMemorylessDistribution:
             # we've picked yold, and now ynew (through lcrvec). 
             x_ynew_yold_probs = calc_x_ynew_yold_probs(self, yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
-            for x in range(self.q): # add to newDistribution[ynew][x]
-                # TODO: stopped here
+            zeroTilNowProb = 1.0
+            for x in range(self.q - 1): # add to newDistribution[ynew][x]
+                prob = zeroTilNowProb * x_ynew_yold_probs[i][1]  if x < q-1 else zeroTilNowProb
+                prob *= self.YMarginal(yold)
                 newDistribution.probs[ynew][x] += prob
+                zeroTilNowProb *= x_ynew_yold_probs[i][1]
+
 
             if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:
                 break
 
     def calc_probs_of_x_ynew_given_yold(self, yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions):
-        '''For each 0 <= i < q-1, calculate p(x=0,yold, ynew[i]) and p(x=1,yold, ynew[i])
-        '''
+        """For each 0 <= i < q-1, calculate p(x=0, ynew[i]|yold) and p(x=1, ynew[i]|yold), for the one-hot channel
+        """
         probs = []
 
         for i in range(self.q - 1):

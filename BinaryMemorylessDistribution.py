@@ -369,6 +369,13 @@ class BinaryMemorylessDistribution:
 
         return newDistribution
 
+    def probXGivenY(self, x,y):
+        return self.probs[y][x] / sum(self.probs[y])
+
+    def calcYMarginal(self, y):
+        """calculate the marginal p(Y = y)"""
+        return sum(self.probs[y])
+
 # functions for degrade/upgrade/merge
 if use_fast == True:
     eta = fast_eta
@@ -385,6 +392,7 @@ else:
     def hxgiveny(data):
         py = data[0] + data[1]
         return py * ( eta(data[0]/py) + eta(data[1]/py) )
+
 
 
 # def myisclose(a, b):
@@ -513,9 +521,3 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
 
     return probMergeLeft, probMergeRight 
 
-    def probXGivenY(self, x,y):
-        return probs[y][x] / sum(probs[y])
-
-    def calcYMarginal(self, y):
-        """calculate the marginal p(Y = y)"""
-        return sum(self.probs[y])

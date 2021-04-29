@@ -251,14 +251,14 @@ class QaryMemorylessDistribution:
         while True:
             ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers)
             # we've picked yold, and now ynew (through lcrvec). 
-            x_ynew_yold_probs = calc_x_ynew_yold_probs(self, yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
+            x_ynew_yold_probs = self.calc_probs_of_x_ynew_given_yold(yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
             zeroTilNowProb = 1.0
-            for x in range(self.q - 1): # add to newDistribution[ynew][x]
-                prob = zeroTilNowProb * x_ynew_yold_probs[i][1]  if x < q-1 else zeroTilNowProb
-                prob *= self.YMarginal(yold)
+            for x in range(self.q): # add to newDistribution[ynew][x]
+                prob = zeroTilNowProb * x_ynew_yold_probs[x][1]  if x < self.q - 1 else zeroTilNowProb
+                prob *= yoldMarginal
                 newDistribution.probs[ynew][x] += prob
-                zeroTilNowProb *= x_ynew_yold_probs[i][1]
+                zeroTilNowProb *= x_ynew_yold_probs[x][0]
 
 
             if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:
@@ -271,7 +271,7 @@ class QaryMemorylessDistribution:
 
         for i in range(self.q - 1):
             upgradedBinDist = upgradedOneHotBinaryMemorylessDistributions[i]
-            originalBinDist = oneHotBinaryMemorylessDistributions[i]
+            originalBinDist = originalOneHotBinaryMemorylessDistributions[i]
             tempProbs = []
 
             if originalBinDist.calcYMarginal(yold) == 0.0:
@@ -280,7 +280,7 @@ class QaryMemorylessDistribution:
             elif lcrvec[i] == lcrCenter:
                 for x in range(2):
                     # yold implies ynew[i], with probability 1
-                    tempprobs.append(originalBinDist.probXGivenY(x,yold))
+                    tempProbs.append(originalBinDist.probXGivenY(x,yold))
             else:
                 for x in range(2):
                     ynew = yoldMappedTo[yold][lcrvec[i]]

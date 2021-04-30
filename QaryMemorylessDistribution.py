@@ -13,7 +13,7 @@ class QaryMemorylessDistribution:
         self.q = q
 
     def __str__(self):
-        s = "Qry memoryless channel with q = " + str(self.q) + " and " + str(len(self.probs)) + " output symbols. The error probability is " + str(self.errorProb()) + ". [p(y,x=0), p(y,x=1), ..., p(y,x=q-1)]: "
+        s = "Qry memoryless channel with q = " + str(self.q) + " and " + str(len(self.probs)) + " output symbols. The error probability is " + str(self.errorProb()) + ". The conditional entropy is " + str(self.conditionalEntropy()) +  ". [p(y,x=0), p(y,x=1), ..., p(y,x=q-1)]: "
 
         for probTuple in self.probs:
             s += "[" 
@@ -206,9 +206,22 @@ class QaryMemorylessDistribution:
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
         M = floor( L ** (1.0/(self.q-1)) )
 
+        # print("Original one hots, pre-sort")
+        # print(oneHotBinaryMemorylessDistributions[0])
+        # print(oneHotBinaryMemorylessDistributions[1])
+
         upgradedOneHotBinaryMemorylessDistributions = []
         for x in range(self.q-1):
             upgradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].upgrade(M) )
+
+        print("* Original one hots")
+        print(oneHotBinaryMemorylessDistributions[0])
+        print(oneHotBinaryMemorylessDistributions[1])
+
+        print("* Upgraded one hots")
+        print(upgradedOneHotBinaryMemorylessDistributions[0])
+        print(upgradedOneHotBinaryMemorylessDistributions[1])
+
 
         newDistribution = QaryMemorylessDistribution(self.q)
 

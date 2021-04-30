@@ -14,7 +14,7 @@ class BinaryMemorylessDistribution:
         self.auxiliary = None # for keeping track of things needed by degrading or upgrading procedures
 
     def __str__(self):
-        s = "Binary memoryless channel with " + str(len(self.probs)) + " symbols and error probability " + str(self.errorProb()) + ". [p(y,x=0), p(y,x=1)]: "
+        s = "Binary memoryless channel with " + str(len(self.probs)) + " symbols. The error probability is " + str(self.errorProb()) + ". The conditional entropy is " + str(self.conditionalEntropy()) + ". [p(y,x=0), p(y,x=1)]: "
 
         for probPair in self.probs:
             s += "[" + str(probPair[0]) + ", " + str(probPair[1]) + "], "

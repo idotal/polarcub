@@ -101,7 +101,7 @@ def qupgrade():
     
     # n = 6
     n = 2
-    L = 10
+    L = 100
     
     channels = []
     channels.append([])
@@ -138,6 +138,7 @@ def qupgradeSimple():
 
     q = 3
     p = 0.11
+    L = 16
 
     qsc = QaryMemorylessDistribution.makeQSC(q, p)
     transformed = qsc
@@ -146,16 +147,19 @@ def qupgradeSimple():
     # transformed = qec
 
     transformed = transformed.plusTransform()
+    transformed = transformed.degrade(100)
     # transformed = transformed.minusTransform()
 
-    # print(transformed)
+    print("original")
+    print(transformed)
     oneHot = transformed.oneHotBinaryMemorylessDistributions()
 
-    upgraded = transformed.upgrade(9)
+    upgraded = transformed.upgrade(L)
 
     # print( oneHot[0] )
     # upgraded = oneHot[0].upgrade(3)
 
+    print("upgraded")
     print( upgraded )
     # upgraded = transformed.upgrade(3)
     # print(upgraded)
@@ -163,8 +167,8 @@ def qupgradeSimple():
 
 # bdegrade()
 # bupgrade()
-# qupgradeSimple()
+qupgradeSimple()
 # qdegrade()
-qupgrade()
+# qupgrade()
 
 # cProfile.run('qdegrade()')

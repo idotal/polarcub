@@ -86,10 +86,10 @@ def qdegrade():
     entropySum = 0.0
     
     for channel in channels[m]:
-        print( channel.conditionalEntropy() )
+        print( log2(q) - channel.conditionalEntropy() )
         entropySum += channel.conditionalEntropy()
     
-    print( "average capacity = ", log2(3.0) - entropySum / 2**(n-1) )
+    print( "average capacity = ", log2(q) - entropySum / 2**(n-1) )
 
 def qupgrade():
     q = 3
@@ -100,7 +100,7 @@ def qupgrade():
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
     # n = 6
-    n = 3
+    n = 2
     L = 10
     
     channels = []
@@ -116,10 +116,10 @@ def qupgrade():
     entropySum = 0.0
     
     for channel in channels[m]:
-        print( channel.conditionalEntropy() )
+        print( log2(q) - channel.conditionalEntropy() )
         entropySum += channel.conditionalEntropy()
     
-    print( "average capacity = ", log2(3.0) - entropySum / 2**(n-1) )
+    print( "average capacity = ", log2(q) - entropySum / 2**(n-1) )
 
 def upgradeSimple():
 

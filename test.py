@@ -99,8 +99,9 @@ def qupgrade():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    n = 6
-    L = 200
+    # n = 6
+    n = 3
+    L = 10
     
     channels = []
     channels.append([])
@@ -138,9 +139,11 @@ def qupgradeSimple():
     q = 3
     p = 0.11
 
-    # qsc = QaryMemorylessDistribution.makeQSC(q, p)
-    qec = QaryMemorylessDistribution.makeQEC(q, p)
-    transformed = qec
+    qsc = QaryMemorylessDistribution.makeQSC(q, p)
+    transformed = qsc
+
+    # qec = QaryMemorylessDistribution.makeQEC(q, p)
+    # transformed = qec
 
     transformed = transformed.plusTransform()
     # transformed = transformed.minusTransform()
@@ -160,6 +163,8 @@ def qupgradeSimple():
 
 # bdegrade()
 # bupgrade()
-qupgradeSimple()
+# qupgradeSimple()
+# qdegrade()
+qupgrade()
 
 # cProfile.run('qdegrade()')

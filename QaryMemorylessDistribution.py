@@ -373,7 +373,10 @@ class QaryMemorylessDistribution:
         ynew = 0
 
         for i in range(self.q-1):                            
-            ynew += yoldMappedTo[yold][i][lcrvec[i]] * conversionToYNewMultipliers[i]
+            # Some output symbols have probability zero, when conditioned on a certain set of
+            # possible inputs. These, we map to the first symbol in the corresponding one-hot channel.
+            mappedTo = yoldMappedTo[yold][i][lcrvec[i]] if yoldMappedTo[yold][i][lcrvec[i]] != None else 0
+            ynew += mappedTo * conversionToYNewMultipliers[i]
 
         return ynew
 

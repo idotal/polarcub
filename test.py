@@ -137,8 +137,10 @@ def qupgradeSimple():
 
     q = 3
     p = 0.11
-    qsc = QaryMemorylessDistribution.makeQSC(q, p)
-    transformed = qsc
+
+    # qsc = QaryMemorylessDistribution.makeQSC(q, p)
+    qec = QaryMemorylessDistribution.makeQEC(q, p)
+    transformed = qec
 
     transformed = transformed.plusTransform()
     # transformed = transformed.minusTransform()

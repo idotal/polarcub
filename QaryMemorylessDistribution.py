@@ -236,8 +236,11 @@ class QaryMemorylessDistribution:
 
         conversionToYNewMultipliers = self.calcConversionToYNewMultipliers(upgradedOneHotBinaryMemorylessDistributions)
 
+        # calculate again, since upgrading removes output symbols with probability zero, and then sorts
+        originalOneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
+
         for yold in range(len(self.probs)):
-            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, oneHotBinaryMemorylessDistributions)
+            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
         newDistribution.removeZeroProbOutput()
 

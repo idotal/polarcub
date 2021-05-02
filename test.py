@@ -164,6 +164,10 @@ def qupgradeSimple():
     # upgraded = transformed.upgrade(3)
     # print(upgraded)
 
+    oneHotUpgraded = upgraded.oneHotBinaryMemorylessDistributions()
+    print("transformed one-hot")
+    print(oneHotUpgraded[0])
+    print(oneHotUpgraded[1])
 
 # bdegrade()
 # bupgrade()

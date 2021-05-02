@@ -235,12 +235,9 @@ class QaryMemorylessDistribution:
         for x in range(self.q - 1):
             for yOneHotIndex, auxDatum in enumerate(upgradedOneHotBinaryMemorylessDistributions[x].auxiliary):
                 for lcr in range(3): #left-center-right
-                    if auxDatum[lcr] == None:
-                        continue
-                    else:
-                        for yold in auxDatum[lcr]:
-                            assert( yoldMappedTo[yold][x][lcr] == None )
-                            yoldMappedTo[yold][x][lcr] = yOneHotIndex
+                    for yold in auxDatum[lcr]:
+                        assert( yoldMappedTo[yold][x][lcr] == None )
+                        yoldMappedTo[yold][x][lcr] = yOneHotIndex
 
         allzeroprobvector = [0.0 for x in range(self.q)]
 
@@ -302,11 +299,9 @@ class QaryMemorylessDistribution:
                     # yold implies ynew[i], with probability 1
                     tempProbs.append(originalBinDist.probXGivenY(x,yold))
             else:
+                ynew = yoldMappedTo[yold][i][lcrvec[i]]
+                otherynew = yoldMappedTo[yold][i][lcrLeft if lcrvec[i] == lcrRight else lcrRight]
                 for x in range(2):
-                    ynew = yoldMappedTo[yold][i][lcrvec[i]]
-
-                    otherynew = yoldMappedTo[yold][i][lcrLeft if lcrvec[i] == lcrRight else lcrRight]
-
                     fractionMultiplier = upgradedBinDist.probXGivenY(x,ynew)
 
                     if upgradedBinDist.probXGivenY(x,otherynew) < 0.5:

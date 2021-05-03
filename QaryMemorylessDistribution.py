@@ -159,6 +159,9 @@ class QaryMemorylessDistribution:
 
     # public functions for degrading/upgrading
     def degrade(self, L):
+        return self.degrade_dynamic(L)
+
+    def degrade_dynamic(self, L):
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
 
         M = floor( L ** (1.0/(self.q-1)) )
@@ -203,6 +206,9 @@ class QaryMemorylessDistribution:
         return newDistribution
 
     def upgrade(self, L):
+        return self.upgrade_dynamic(L)
+
+    def upgrade_dynamic(self, L):
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
         M = floor( L ** (1.0/(self.q-1)) )
 
@@ -214,13 +220,13 @@ class QaryMemorylessDistribution:
         for x in range(self.q-1):
             upgradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].upgrade(M) )
 
-        print("* Original one hots")
-        print(oneHotBinaryMemorylessDistributions[0])
-        print(oneHotBinaryMemorylessDistributions[1])
-
-        print("* Upgraded one hots")
-        print(upgradedOneHotBinaryMemorylessDistributions[0])
-        print(upgradedOneHotBinaryMemorylessDistributions[1])
+        # print("* Original one hots")
+        # print(oneHotBinaryMemorylessDistributions[0])
+        # print(oneHotBinaryMemorylessDistributions[1])
+        #
+        # print("* Upgraded one hots")
+        # print(upgradedOneHotBinaryMemorylessDistributions[0])
+        # print(upgradedOneHotBinaryMemorylessDistributions[1])
 
 
         newDistribution = QaryMemorylessDistribution(self.q)
@@ -266,16 +272,25 @@ class QaryMemorylessDistribution:
             # we've picked yold, and now ynew (through lcrvec). 
             x_ynew_yold_probs = self.calc_probs_of_x_ynew_given_yold(yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
+
+            marginalFromNowProb = [0.0 for i in range(self.q+1)] # marginalFromNowProb[i] = P(ynew[i],ynew[i+1],...,ynew[q-2]|yold)
+
+            marginalFromNowProb[self.q-1] = 1.0
+            for i in range(self.q-2, -1, -1): 
+                marginalFromNowProb[i] = marginalFromNowProb[i+1] * (x_ynew_yold_probs[i][0] + x_ynew_yold_probs[i][1])
+
+
             zeroTilNowProb = 1.0
             for x in range(self.q): # add to newDistribution[ynew][x]
                 if x < self.q - 1:
-                    prob = zeroTilNowProb * x_ynew_yold_probs[x][1] 
+                    prob = zeroTilNowProb * x_ynew_yold_probs[x][1] * marginalFromNowProb[x+1]
                     zeroTilNowProb *= x_ynew_yold_probs[x][0]
                 else:
                     prob = zeroTilNowProb
 
                 prob *= yoldMarginal
                 newDistribution.probs[ynew][x] += prob
+                # TODO: the bug is here! For x=0, for example, we are only considering the prob of p(ynew[0]), and disregarding p(ynew[1])
 
 
             if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:

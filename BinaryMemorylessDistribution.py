@@ -2,11 +2,11 @@ import math
 import sys
 import LinkedListHeap
 import itertools
-from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
-from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
-
-use_fast = True
-# use_fast = False
+# from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
+# from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
+#
+# use_fast = True
+use_fast = False
 
 class BinaryMemorylessDistribution:
     def __init__(self):
@@ -510,7 +510,9 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
         thetaRight = deltaLeftMinusCenter/deltaLeftMinusRight
         thetaLeft = 1.0 - thetaRight
 
-    assert(0.0 < thetaLeft < 1.0 and 0.0 < thetaRight < 1.0)
+    # Mathematically, the inequalities are strict. However, due to finite precision,
+    # we allow equality.
+    assert(0.0 <= thetaLeft <= 1.0 and 0.0 <= thetaRight <= 1.0)
 
     probMergeLeft = []
     probMergeRight = []

@@ -71,7 +71,7 @@ def qdegrade():
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
     n = 6
-    L = 200
+    L = 400
     
     channels = []
     channels.append([])
@@ -99,9 +99,9 @@ def qupgrade():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    # n = 6
-    n = 2
-    L = 100
+    n = 6
+    # n = 2
+    L = 400
     
     channels = []
     channels.append([])
@@ -171,8 +171,8 @@ def qupgradeSimple():
 
 # bdegrade()
 # bupgrade()
-qupgradeSimple()
+# qupgradeSimple()
 # qdegrade()
-# qupgrade()
+qupgrade()
 
-# cProfile.run('qdegrade()')
+# cProfile.run('qupgrade()')

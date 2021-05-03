@@ -1,6 +1,7 @@
 import BinaryMemorylessDistribution
 from BinaryMemorylessDistribution import eta
 from math import floor
+import numpy as np
 
 # constants
 lcrLeft = 0
@@ -124,7 +125,6 @@ class QaryMemorylessDistribution:
 
     # polar transforms
     def minusTransform(self):
-        
         newDistribution = QaryMemorylessDistribution(self.q)
 
         for y1 in self.probs:
@@ -141,7 +141,6 @@ class QaryMemorylessDistribution:
         return newDistribution
 
     def plusTransform(self):
-        
         newDistribution = QaryMemorylessDistribution(self.q)
 
         for y1 in self.probs:
@@ -205,6 +204,30 @@ class QaryMemorylessDistribution:
 
         return newDistribution
 
+    def degrade_static(self, L):
+        M = floor( L ** (1.0/(self.q-1)) )
+
+        dims = [M for i in range(self.q-1)]
+
+        cellsArray = np.array([set() for _ in range(M ** (self.q-1))]).reshape(dims)
+
+        # first, put each output letter into the corresponding cell
+
+        for yold, prob in enumerate(self.probs):
+            probsum = sum(prob)
+            cell = []
+            for x in range(self.q - 1):
+                cell.append(floor(M * prob[x]/probsum)) # TODO: stub
+
+            print(yold, prob, cell)
+            cellsArray[tuple(cell)] |= {yold}
+            # print(cellsArray)
+
+        print(cellsArray)
+
+
+        # then, merge all the letters in a cell into a single letter
+
     def upgrade(self, L):
         return self.upgrade_dynamic(L)
 
@@ -212,22 +235,9 @@ class QaryMemorylessDistribution:
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
         M = floor( L ** (1.0/(self.q-1)) )
 
-        # print("Original one hots, pre-sort")
-        # print(oneHotBinaryMemorylessDistributions[0])
-        # print(oneHotBinaryMemorylessDistributions[1])
-
         upgradedOneHotBinaryMemorylessDistributions = []
         for x in range(self.q-1):
             upgradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].upgrade(M) )
-
-        # print("* Original one hots")
-        # print(oneHotBinaryMemorylessDistributions[0])
-        # print(oneHotBinaryMemorylessDistributions[1])
-        #
-        # print("* Upgraded one hots")
-        # print(upgradedOneHotBinaryMemorylessDistributions[0])
-        # print(upgradedOneHotBinaryMemorylessDistributions[1])
-
 
         newDistribution = QaryMemorylessDistribution(self.q)
 
@@ -290,8 +300,6 @@ class QaryMemorylessDistribution:
 
                 prob *= yoldMarginal
                 newDistribution.probs[ynew][x] += prob
-                # TODO: the bug is here! For x=0, for example, we are only considering the prob of p(ynew[0]), and disregarding p(ynew[1])
-
 
             if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:
                 break

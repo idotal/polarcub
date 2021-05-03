@@ -134,6 +134,42 @@ def upgradeSimple():
     upgraded = transformed.upgrade(3)
     print(upgraded)
 
+def qdegradeSimple():
+
+    q = 3
+    p = 0.11
+    L = 16
+
+    qsc = QaryMemorylessDistribution.makeQSC(q, p)
+    transformed = qsc
+
+    # qec = QaryMemorylessDistribution.makeQEC(q, p)
+    # transformed = qec
+
+    transformed = transformed.plusTransform()
+    # transformed = transformed.plusTransform()
+    transformed = transformed.degrade_static(100)
+    # transformed = transformed.minusTransform()
+    #
+    # print("original")
+    # print(transformed)
+    # oneHot = transformed.oneHotBinaryMemorylessDistributions()
+    #
+    # upgraded = transformed.upgrade(L)
+    #
+    # # print( oneHot[0] )
+    # # upgraded = oneHot[0].upgrade(3)
+    #
+    # print("upgraded")
+    # print( upgraded )
+    # # upgraded = transformed.upgrade(3)
+    # # print(upgraded)
+    #
+    # oneHotUpgraded = upgraded.oneHotBinaryMemorylessDistributions()
+    # print("transformed one-hot")
+    # print(oneHotUpgraded[0])
+    # print(oneHotUpgraded[1])
+
 def qupgradeSimple():
 
     q = 3
@@ -173,6 +209,7 @@ def qupgradeSimple():
 # bupgrade()
 # qupgradeSimple()
 # qdegrade()
-qupgrade()
+# qupgrade()
+qdegradeSimple()
 
 # cProfile.run('qupgrade()')

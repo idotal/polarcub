@@ -5,7 +5,6 @@ import QaryMemorylessDistribution
 import LinkedListHeap
 from math import log2
 import cProfile
-import sys
 
 def bupgrade():
     p = 0.11
@@ -21,7 +20,7 @@ def bupgrade():
     channels.append([])
     channels[0].append(bsc)
     
-    for m in range(1,n):
+    for m in range(1,n+1):
         channels.append([])
         for channel in channels[m-1]:
             channels[m].append(channel.minusTransform().upgrade(L))
@@ -33,7 +32,7 @@ def bupgrade():
         print( channel.conditionalEntropy() )
         entropySum += channel.conditionalEntropy()
     
-    print( "average capacity = ", 1.0 - entropySum / 2**(n-1) )
+    print( "average capacity = ", 1.0 - entropySum / 2**n )
 
 def bdegrade():
     p = 0.11
@@ -49,7 +48,7 @@ def bdegrade():
     channels.append([])
     channels[0].append(bsc)
     
-    for m in range(1,n):
+    for m in range(1,n+1):
         channels.append([])
         for channel in channels[m-1]:
             channels[m].append(channel.minusTransform().degrade(L))
@@ -61,7 +60,7 @@ def bdegrade():
         print( channel.conditionalEntropy() )
         entropySum += channel.conditionalEntropy()
     
-    print( "average capacity = ", 1.0 - entropySum / 2**(n-1) )
+    print( "average capacity = ", 1.0 - entropySum / 2**n )
 
 def qdegrade_static():
     q = 3
@@ -78,7 +77,7 @@ def qdegrade_static():
     channels.append([])
     channels[0].append(qsc)
     
-    for m in range(1,n):
+    for m in range(1,n+1):
         channels.append([])
         for channel in channels[m-1]:
             channels[m].append(channel.minusTransform().degrade_static(L))
@@ -90,7 +89,7 @@ def qdegrade_static():
         print( log2(q) - channel.conditionalEntropy() )
         entropySum += channel.conditionalEntropy()
     
-    print( "average capacity = ", log2(q) - entropySum / 2**(n-1) )
+    print( "average capacity = ", log2(q) - entropySum / 2**n )
 
 def qdegrade():
     q = 3
@@ -107,7 +106,7 @@ def qdegrade():
     channels.append([])
     channels[0].append(qsc)
     
-    for m in range(1,n):
+    for m in range(1,n+1):
         channels.append([])
         for channel in channels[m-1]:
             channels[m].append(channel.minusTransform().degrade(L))
@@ -119,7 +118,7 @@ def qdegrade():
         print( log2(q) - channel.conditionalEntropy() )
         entropySum += channel.conditionalEntropy()
     
-    print( "average capacity = ", log2(q) - entropySum / 2**(n-1) )
+    print( "average capacity = ", log2(q) - entropySum / 2**n )
 
 def qupgrade():
     q = 3
@@ -129,7 +128,7 @@ def qupgrade():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    n = 6
+    n = 5
     # n = 2
     L = 400
     
@@ -137,7 +136,7 @@ def qupgrade():
     channels.append([])
     channels[0].append(qsc)
     
-    for m in range(1,n):
+    for m in range(1,n+1):
         channels.append([])
         for channel in channels[m-1]:
             channels[m].append(channel.minusTransform().upgrade(L))
@@ -149,7 +148,7 @@ def qupgrade():
         print( log2(q) - channel.conditionalEntropy() )
         entropySum += channel.conditionalEntropy()
     
-    print( "average capacity = ", log2(q) - entropySum / 2**(n-1) )
+    print( "average capacity = ", log2(q) - entropySum / 2**n )
 
 def upgradeSimple():
 

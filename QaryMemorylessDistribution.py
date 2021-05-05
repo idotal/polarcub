@@ -165,7 +165,7 @@ class QaryMemorylessDistribution:
     def degrade_dynamic(self, L):
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
 
-        M = floor( L ** (1.0/(self.q-1)) )
+        M = self.calcMFromL(L)
         
         degradedOneHotBinaryMemorylessDistributions = []
         for x in range(self.q-1):
@@ -207,7 +207,7 @@ class QaryMemorylessDistribution:
         return newDistribution
 
     def degrade_static(self, L):
-        M = floor( L ** (1.0/(self.q-1)) + sys.float_info.epsilon )
+        M = calcMFromL(L)
 
         mu =  1.0 / (math.e * (M / 2) ) # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
 
@@ -256,7 +256,7 @@ class QaryMemorylessDistribution:
 
     def upgrade_dynamic(self, L):
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
-        M = floor( L ** (1.0/(self.q-1)) )
+        M = self.calcMFromL(L)
 
         upgradedOneHotBinaryMemorylessDistributions = []
         for x in range(self.q-1):
@@ -450,6 +450,10 @@ class QaryMemorylessDistribution:
         for y in range(len(self.probs)):
             for x in range(self.q):
                 self.probs[y][x] /= probSum
+
+    def calcMFromL(self, L):
+        M = floor( L ** (1.0/(self.q-1)) + sys.float_info.epsilon )
+        return M
 
 # useful channels
 def makeQSC(q, p):

@@ -1,7 +1,9 @@
 import BinaryMemorylessDistribution
-from BinaryMemorylessDistribution import eta
+from BinaryMemorylessDistribution import eta, naturalEta
 from math import floor
 import numpy as np
+import sys
+import math
 
 # constants
 lcrLeft = 0
@@ -205,7 +207,11 @@ class QaryMemorylessDistribution:
         return newDistribution
 
     def degrade_static(self, L):
-        M = floor( L ** (1.0/(self.q-1)) )
+        M = floor( L ** (1.0/(self.q-1)) + sys.float_info.epsilon )
+
+        mu =  1.0 / (math.e * (M / 2) ) # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
+
+        newDistribution = QaryMemorylessDistribution(self.q)
 
         dims = [M for i in range(self.q-1)]
 
@@ -217,16 +223,33 @@ class QaryMemorylessDistribution:
             probsum = sum(prob)
             cell = []
             for x in range(self.q - 1):
-                cell.append(floor(M * prob[x]/probsum)) # TODO: stub
+                cell.append(self.calcCell_static_degrade(prob[x]/probsum, M, mu))
 
-            print(yold, prob, cell)
             cellsArray[tuple(cell)] |= {yold}
-            # print(cellsArray)
 
-        print(cellsArray)
+        for setOfY in np.nditer(cellsArray, flags=["refs_ok"]):
+            actualSet = setOfY.item()
+            if len(actualSet) == 0:
+                continue
 
+            ynewProb = [0.0 for i in range(self.q)]
 
-        # then, merge all the letters in a cell into a single letter
+            for yold in actualSet:
+                for x in range(self.q):
+                    ynewProb[x] += self.probs[yold][x]
+            
+            newDistribution.probs.append(ynewProb)
+        newDistribution.normalize() # for good measure
+        return newDistribution
+
+    def calcCell_static_degrade(self, postProb, M, mu):
+        if postProb <= 1.0 / math.e:
+            cell = floor(naturalEta(postProb) / mu)
+        else:
+            cell = M - 1 - floor(naturalEta(postProb) / mu)
+
+        assert(cell >= 0 and cell < M)
+        return cell
 
     def upgrade(self, L):
         return self.upgrade_dynamic(L)
@@ -410,6 +433,23 @@ class QaryMemorylessDistribution:
             ynew += mappedTo * conversionToYNewMultipliers[i]
 
         return ynew
+
+    def normalize(self):
+        probSum = 0.0
+
+        tempProbs = []
+        for probList in self.probs:
+            for prob in probList:
+                tempProbs.append(prob)
+
+        tempProbs.sort()
+
+        for tp in tempProbs:
+            probSum += tp
+
+        for y in range(len(self.probs)):
+            for x in range(self.q):
+                self.probs[y][x] /= probSum
 
 # useful channels
 def makeQSC(q, p):

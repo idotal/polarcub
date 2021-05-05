@@ -389,6 +389,14 @@ else:
         else:
             return -p * math.log2(p)
 
+    def naturalEta(p):
+        assert 0 <= p <= 1
+    
+        if p == 0:
+            return 0
+        else:
+            return -p * math.log(p)
+
     def hxgiveny(data):
         py = data[0] + data[1]
         return py * ( eta(data[0]/py) + eta(data[1]/py) )

@@ -5,6 +5,7 @@ import QaryMemorylessDistribution
 import LinkedListHeap
 from math import log2
 import cProfile
+import sys
 
 def bupgrade():
     p = 0.11
@@ -61,6 +62,35 @@ def bdegrade():
         entropySum += channel.conditionalEntropy()
     
     print( "average capacity = ", 1.0 - entropySum / 2**(n-1) )
+
+def qdegrade_static():
+    q = 3
+    p = 0.11
+    
+    qsc = QaryMemorylessDistribution.makeQSC(q, p)
+    
+    print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
+    
+    n = 6
+    L = 400
+    
+    channels = []
+    channels.append([])
+    channels[0].append(qsc)
+    
+    for m in range(1,n):
+        channels.append([])
+        for channel in channels[m-1]:
+            channels[m].append(channel.minusTransform().degrade_static(L))
+            channels[m].append(channel.plusTransform().degrade_static(L))
+    
+    entropySum = 0.0
+    
+    for channel in channels[m]:
+        print( log2(q) - channel.conditionalEntropy() )
+        entropySum += channel.conditionalEntropy()
+    
+    print( "average capacity = ", log2(q) - entropySum / 2**(n-1) )
 
 def qdegrade():
     q = 3
@@ -140,6 +170,11 @@ def qdegradeSimple():
     p = 0.11
     L = 16
 
+    # myset = {1, 5, 7}
+    # print(myset)
+    # for i in myset:
+    #     print(i)
+
     qsc = QaryMemorylessDistribution.makeQSC(q, p)
     transformed = qsc
 
@@ -148,7 +183,9 @@ def qdegradeSimple():
 
     transformed = transformed.plusTransform()
     # transformed = transformed.plusTransform()
+    print(transformed)
     transformed = transformed.degrade_static(100)
+    print(transformed)
     # transformed = transformed.minusTransform()
     #
     # print("original")
@@ -209,7 +246,8 @@ def qupgradeSimple():
 # bupgrade()
 # qupgradeSimple()
 # qdegrade()
+qdegrade_static()
 # qupgrade()
-qdegradeSimple()
+# qdegradeSimple()
 
 # cProfile.run('qupgrade()')

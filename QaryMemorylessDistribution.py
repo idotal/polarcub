@@ -422,21 +422,72 @@ class QaryMemorylessDistribution:
 
             cellsArray[tuple(cell)] |= {yold}
 
+        # The first q symbols are the boost symbols
+        allzeroprobvector = [0.0 for i in range(self.q)]
+        for x in range(q):
+            newDistribution.probs.append(allzeroprobvector.copy())
+
         for setOfY in np.nditer(cellsArray, flags=["refs_ok"]):
             actualSet = setOfY.item()
             if len(actualSet) == 0:
                 continue
+            self.upgradeCellToSymbolPlusBoosts(actualSet, newDistribution.probs)
 
-            ynewProb = [0.0 for i in range(self.q)]
-
-            # TODO: change this, and add the perfect symbols
-            for yold in actualSet:
-                for x in range(self.q):
-                    ynewProb[x] += self.probs[yold][x]
-            
-            newDistribution.probs.append(ynewProb)
+            # ynewProb = [0.0 for i in range(self.q)]
+            #
+            # # TODO: change this, and add the perfect symbols
+            # for yold in actualSet:
+            #     for x in range(self.q):
+            #         ynewProb[x] += self.probs[yold][x]
+            #
+            # newDistribution.probs.append(ynewProb)
+        newDistribution.removeZeroProbOutput()
         newDistribution.normalize() # for good measure
         return newDistribution
+
+    def upgradeCellToSymbolPlusBoosts(self, actualSet, newprobs):
+        ynewProb = [0.0 for i in range(self.q)]
+        
+        if len(actualSet) == 1:
+            for yold in actualSet:
+            newprobs.append(self.probs[yold])
+            return
+
+        # find the leading input symbol
+        leadingX = -1
+        leadingPostProb = -1.0
+
+        for yold in actualSet:
+            probsum = sum(self.probs[yold])
+            assert(probSum) > 0.0
+
+            for x in range(self.q):
+                postProb = self.probs[yold][x]/probSum
+                if postProb > leadingPostProb:
+                    leadingX = x
+                    leadingPostProb = postProb
+
+        # the leading input symbol is leadingX
+        # now, find the posterior of the cell
+        cellPosteriorProb = [1.0 for i in range(self.q)]
+        cellPosteriorProb[leadingX] = 0.0
+        
+        for yold in actualSet:
+            probsum = sum(self.probs[yold])
+            for x in range(self.q):
+                if x == leadingX:
+                    continue
+                postProb = self.probs[yold][x]/probSum
+                if postProb < cellPosteriorProb[x]:
+                    cellPosteriorProb[x] = postProb
+
+        cellPosteriorProb[leadingX] = 1.0 - sum(posteriorProb)
+
+        #TODO stopped here
+
+
+
+
 
     def calcCell_static_upgrade(self, postProb, M, mu, indexOfBorderCell, maxProbOfBorderCell, alpha):
         if postProb > maxProbOfBorderCell:

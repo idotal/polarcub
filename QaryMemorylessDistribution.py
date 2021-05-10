@@ -207,7 +207,7 @@ class QaryMemorylessDistribution:
         return newDistribution
 
     def degrade_static(self, L):
-        M = calcMFromL(L)
+        M = self.calcMFromL(L)
 
         mu =  1.0 / (math.e * (M / 2) ) # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
 
@@ -400,9 +400,11 @@ class QaryMemorylessDistribution:
         return conversionToYNewMultipliers
 
     def upgrade_static(self, L):
-        M = calcMFromL(L)
+        M = self.calcMFromL(L)
 
-        mu, indexOfBorderCell, maxProbOfBorderCell, alpha =  calcMuForUpgrading(M)
+        mu, indexOfBorderCell, maxProbOfBorderCell, alpha =  self.calcMuForUpgrading(M)
+
+        # print(mu, indexOfBorderCell, maxProbOfBorderCell, alpha)
 
         newDistribution = QaryMemorylessDistribution(self.q)
 
@@ -442,14 +444,14 @@ class QaryMemorylessDistribution:
         elif postProb > 1.0 / alpha:
             cellIndex = indexOfBorderCell
         else:
-            cellIndex = floor( eta(postProb) * mu )
+            cellIndex = floor( naturalEta(postProb) * mu )
 
         if cellIndex > M - 1:
             cellIndex = M - 1
 
         return cellIndex
 
-    def calcMuForUpgrading(M):
+    def calcMuForUpgrading(self, M):
         """Calculate the value of the optimal (largest) mu, as well as other parameters of interest, for a given M."""
 
         # Consider Figure 3 in the IEEE-IT paper by Pereg and Tal.
@@ -461,9 +463,9 @@ class QaryMemorylessDistribution:
         # algorithm. Let mu be given.
         # * Divide the cells to the left of the blue line exactly as in Figure 3. That is
         # all the cells containing only probabilities less than or equal to alpha are ordered such
-        # that the difference between eta of the left and right (min and max) probabilities
+        # that the difference between naturalEta of the left and right (min and max) probabilities
         # is exactly 1/mu.
-        # The number of these cells is floor(2 * alpha * mu), since eta(alpha) = 2 * alpha
+        # The number of these cells is floor(2 * alpha * mu), since naturalEta(alpha) = 2 * alpha
         # Next, *unlike* Figure 3, divide the cells to the right of the blue line such that
         # the width of the right most cell (20 in the Figure) is exactly 1/mu, and keep
         # going left as long as you can; that is, as long as the cell does not contain probabilities
@@ -482,11 +484,11 @@ class QaryMemorylessDistribution:
         # these extreme mu and does not hold for the other. Specifically, the good criterion is
         # that the width of the leftover cell is at most 1/mu (the difference between the maximum and
         # minimum probability contained in the cell is at most 1/mu), and also that
-        # max_p eta(p) - min_p eta(p) is at most 1/mu, where p ranges over all the probabilities in the
+        # max_p naturalEta(p) - min_p naturalEta(p) is at most 1/mu, where p ranges over all the probabilities in the
         # cell. For the larger extreme mu (we are about to transition from having M cells into having M+1 cells)
         # the good condition does not hold, since a new cell is about to be born, either because the dotted
         # red line immediately to the right of the blue line is very close to 1/mu, or because the top most
-        # horizontal dotted red line to the left of the blue line almost eta(alpha) - 1/mu. This, and the
+        # horizontal dotted red line to the left of the blue line almost naturalEta(alpha) - 1/mu. This, and the
         # fact that we have some slack on the other side of the blue line (again, from the irrationality of alpha)
         # implies that we are not fulfilling at least one of requirements of the good condition. 
         # Conversely, for the other extreme mu, the good condition is met. To see this, note that in the case,
@@ -500,14 +502,14 @@ class QaryMemorylessDistribution:
 
         assert( M > 1)
 
-        muUpper = 2 * M
+        muUpper = 2.0 * M
         muLower = 1.0
         alpha = 1.0/(math.e ** 2)
 
-        while muUpper - muLower > 0.0000001
+        while muUpper - muLower > 0.0000001:
             mu = (muUpper + muLower) / 2.0
             cellsToLeftOfAlpha = floor(2.0 * alpha * mu) # for a given mu, this is exactly the number of cells to the left of alpha
-            cellToRightOfAlpha = floor((1.0 - alpha) * mu)
+            cellsToRightOfAlpha = floor((1.0 - alpha) * mu)
             totalCells = cellsToLeftOfAlpha + cellsToRightOfAlpha + 1
             if totalCells < M: # mu too small
                 muLower = mu
@@ -518,21 +520,21 @@ class QaryMemorylessDistribution:
             
             # right side and left side mean left and right of blue line, respectively
             maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfAlpha
-            maxEtaOfBorderCell = eta(maxProbOfBorderCell) if maxProbOfBorderCell < 1.0 / math.e else eta(1.0 / math.e)
-            minEtaOnLeftSideOfBorderCell = (1.0 / mu) * cellsToLeftOfALpha
+            maxEtaOfBorderCell = naturalEta(maxProbOfBorderCell) if maxProbOfBorderCell < 1.0 / math.e else naturalEta(1.0 / math.e)
+            minEtaOnLeftSideOfBorderCell = (1.0 / mu) * cellsToLeftOfAlpha
 
             if maxEtaOfBorderCell - minEtaOnLeftSideOfBorderCell > 1.0 / mu: # mu too large
                 muUpper = mu
                 continue
 
             if maxProbOfBorderCell > 1.0 / math.e:
-                minEtaOnRightSideOfBorderCell = min(eta(maxProbOfBorderCell), eta(alpha))
+                minEtaOnRightSideOfBorderCell = min(naturalEta(maxProbOfBorderCell), naturalEta(alpha))
                 if maxEtaOfBorderCell - minEtaOnRightSideOfBorderCell > 1.0 / mu: # mu too large
                     muUpper = mu
                     continue
 
             # is the width of the border cell greater than 1/mu?
-            if eta(maxProbOfOfBorderCell - 1.0/mu) > minEtaOnLeftSideOfBorderCell: # mu too large
+            if naturalEta(maxProbOfBorderCell - 1.0/mu) > minEtaOnLeftSideOfBorderCell: # mu too large
                 muUpper = mu
                 continue
 
@@ -546,7 +548,8 @@ class QaryMemorylessDistribution:
         cellsToLeftOfAlpha = floor(2.0 * alpha * mu) # for a given mu, this is exactly the number of cells to the left of alpha
         cellToRightOfAlpha = floor((1.0 - alpha) * mu)
 
-        assert( cellsToLeftOfAlpha + cellsToLeftOfAlpha + 1 == M )
+        # print(cellsToLeftOfAlpha, cellsToRightOfAlpha, mu, alpha)
+        assert( cellsToLeftOfAlpha + cellsToRightOfAlpha + 1 == M )
         indexOfBorderCell  = cellsToLeftOfAlpha
         maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfAlpha
 

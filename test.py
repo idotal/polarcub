@@ -70,7 +70,7 @@ def qdegrade_static():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    n = 6
+    n = 5
     L = 400
     
     channels = []
@@ -141,6 +141,36 @@ def qupgrade():
         for channel in channels[m-1]:
             channels[m].append(channel.minusTransform().upgrade(L))
             channels[m].append(channel.plusTransform().upgrade(L))
+    
+    entropySum = 0.0
+    
+    for channel in channels[m]:
+        print( log2(q) - channel.conditionalEntropy() )
+        entropySum += channel.conditionalEntropy()
+    
+    print( "average capacity = ", log2(q) - entropySum / 2**n )
+
+def qupgrade_static():
+    q = 3
+    p = 0.11
+    
+    qsc = QaryMemorylessDistribution.makeQSC(q, p)
+    
+    print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
+    
+    n = 5
+    # n = 2
+    L = 400
+    
+    channels = []
+    channels.append([])
+    channels[0].append(qsc)
+    
+    for m in range(1,n+1):
+        channels.append([])
+        for channel in channels[m-1]:
+            channels[m].append(channel.minusTransform().upgrade_static(L))
+            channels[m].append(channel.plusTransform().upgrade_static(L))
     
     entropySum = 0.0
     
@@ -244,9 +274,10 @@ def qupgradeSimple():
 # bdegrade()
 # bupgrade()
 # qupgradeSimple()
-qdegrade()
-# qdegrade_static()
+# qdegrade()
+qdegrade_static()
 # qupgrade()
+# qupgrade_static()
 # qdegradeSimple()
 
 # cProfile.run('qupgrade()')

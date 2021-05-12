@@ -416,6 +416,9 @@ class QaryMemorylessDistribution:
 
         for yold, prob in enumerate(self.probs):
             probsum = sum(prob)
+            if probsum == 0.0:
+                continue
+
             cell = []
             for x in range(self.q - 1):
                 cell.append(self.calcCell_static_upgrade(prob[x]/probsum, M, mu, indexOfBorderCell, maxProbOfBorderCell, alpha))
@@ -424,7 +427,7 @@ class QaryMemorylessDistribution:
 
         # The first q symbols are the boost symbols
         allzeroprobvector = [0.0 for i in range(self.q)]
-        for x in range(q):
+        for x in range(self.q):
             newDistribution.probs.append(allzeroprobvector.copy())
 
         for setOfY in np.nditer(cellsArray, flags=["refs_ok"]):
@@ -458,7 +461,7 @@ class QaryMemorylessDistribution:
         leadingPostProb = -1.0
 
         for yold in actualSet:
-            probsum = sum(self.probs[yold])
+            probSum = sum(self.probs[yold])
             assert(probSum) > 0.0
 
             for x in range(self.q):
@@ -481,7 +484,7 @@ class QaryMemorylessDistribution:
                 if postProb < cellPosteriorProb[x]:
                     cellPosteriorProb[x] = postProb
 
-        cellPosteriorProb[leadingX] = 1.0 - sum(posteriorProb)
+        cellPosteriorProb[leadingX] = 1.0 - sum(cellPosteriorProb)
 
         # now calculate alpha_x(y), as per (10), and add probabilities 
         # to regular symbols (13a) and boost symbols (13b)

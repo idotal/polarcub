@@ -448,6 +448,8 @@ class QaryMemorylessDistribution:
                 newprobs.append(self.probs[yold])
             return
 
+        # print("*")
+
         # find the leading input symbol
         leadingX = -1
         leadingPostProb = -1.0
@@ -468,7 +470,7 @@ class QaryMemorylessDistribution:
         cellPosteriorProb[leadingX] = 0.0
         
         for yold in actualSet:
-            probsum = sum(self.probs[yold])
+            probSum = sum(self.probs[yold])
             for x in range(self.q):
                 if x == leadingX:
                     continue
@@ -507,9 +509,7 @@ class QaryMemorylessDistribution:
                 debugProbTwo[x] /= debugSumTwo
 
             # print( cellPosteriorProb, debugProb, debugProbTwo )
-            print( cellPosteriorProb, debugProbTwo )
-
-
+            # print( cellPosteriorProb, debugProbTwo )
 
         newprobs.append(ynewProb)
 

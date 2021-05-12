@@ -158,8 +158,8 @@ def qupgrade_static():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    n = 5
-    # n = 2
+    # n = 5
+    n = 2
     L = 400
     
     channels = []
@@ -275,7 +275,7 @@ def qupgradeSimple():
 # bupgrade()
 # qupgradeSimple()
 # qdegrade()
-qdegrade_static()
+# qdegrade_static()
 # qupgrade()
 qupgrade_static()
 # qdegradeSimple()

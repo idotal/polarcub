@@ -436,14 +436,6 @@ class QaryMemorylessDistribution:
                 continue
             self.upgradeCellToSymbolPlusBoosts(actualSet, newDistribution.probs)
 
-            # ynewProb = [0.0 for i in range(self.q)]
-            #
-            # # TODO: change this, and add the perfect symbols
-            # for yold in actualSet:
-            #     for x in range(self.q):
-            #         ynewProb[x] += self.probs[yold][x]
-            #
-            # newDistribution.probs.append(ynewProb)
         newDistribution.removeZeroProbOutput()
         newDistribution.normalize() # for good measure
         return newDistribution
@@ -491,6 +483,7 @@ class QaryMemorylessDistribution:
         ynewProb = [0.0 for i in range(self.q)]
 
         for yold in actualSet:
+            debugProb = [0.0 for i in range(self.q)]
             for x in range(self.q):
                 if self.probs[yold][x] > 0.0:
                     alphaxy = (cellPosteriorProb[x] / self.probs[yold][x]) * (self.probs[yold][leadingX] / cellPosteriorProb[leadingX] )
@@ -501,9 +494,22 @@ class QaryMemorylessDistribution:
 
                 # Now that we've calculate alphaxy, calculate the probability to add
                 ynewProb[x] += self.probs[yold][x] * alphaxy
+                debugProb[x] = self.probs[yold][x] * alphaxy
 
                 # for the boost symbol
                 newprobs[x][x] += (1.0 - alphaxy) * self.probs[yold][x]
+            
+            debugProbTwo = self.probs[yold]
+            debugSum = sum(debugProb)
+            debugSumTwo = sum(debugProbTwo)
+            for x in range(self.q):
+                debugProb[x] /= debugSum
+                debugProbTwo[x] /= debugSumTwo
+
+            # print( cellPosteriorProb, debugProb, debugProbTwo )
+            print( cellPosteriorProb, debugProbTwo )
+
+
 
         newprobs.append(ynewProb)
 

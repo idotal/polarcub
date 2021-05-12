@@ -450,7 +450,7 @@ class QaryMemorylessDistribution:
         
         if len(actualSet) == 1:
             for yold in actualSet:
-            newprobs.append(self.probs[yold])
+                newprobs.append(self.probs[yold])
             return
 
         # find the leading input symbol
@@ -483,11 +483,24 @@ class QaryMemorylessDistribution:
 
         cellPosteriorProb[leadingX] = 1.0 - sum(posteriorProb)
 
-        #TODO stopped here
+        # now calculate alpha_x(y), as per (10), and add probabilities 
+        # to regular symbols (13a) and boost symbols (13b)
+        ynewProb = [0.0 for i in range(self.q)]
 
+        for yold in actualSet:
+            for x in range(self.q):
+                if self.probs[yold][x] > 0.0:
+                    alphaxy = (cellPosteriorProb[x] / self.probs[yold][x]) * (self.probs[yold][leadingX] / cellPosteriorProb[leadingX] )
+                else:
+                    alphaxy = 1.0
 
+                # Now that we've calculate alphaxy, calculate the probability to add
+                ynewProb[x] += self.probs[yold][x] * alphaxy
 
+                # for the boost symbol
+                newprobs[x][x] += (1.0 - alphaxy) * self.probs[yold][x]
 
+        newprobs.append(ynewProb)
 
     def calcCell_static_upgrade(self, postProb, M, mu, indexOfBorderCell, maxProbOfBorderCell, alpha):
         if postProb > maxProbOfBorderCell:

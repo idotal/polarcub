@@ -497,6 +497,8 @@ class QaryMemorylessDistribution:
                 else:
                     alphaxy = 1.0
 
+                alphaxy = min(1.0,alphaxy) # fix floating point rounding errors
+
                 # Now that we've calculate alphaxy, calculate the probability to add
                 ynewProb[x] += self.probs[yold][x] * alphaxy
 

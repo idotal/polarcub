@@ -4,11 +4,16 @@ from math import floor
 import numpy as np
 import sys
 import math
+from enum import Enum
 
 # constants
 lcrLeft = 0
 lcrCenter = 1
 lcrRight = 2
+
+class Binning(Enum):
+    TalSharovVardy = 1 # standard cell function for static degrade
+    PeregTal = 2 # standard cell function for static upgrade
 
 class QaryMemorylessDistribution:
     def __init__(self, q):
@@ -206,12 +211,15 @@ class QaryMemorylessDistribution:
 
         return newDistribution
 
-    def degrade_static(self, L):
+    def putLettersInBins(self, L, binningToUse):
         M = self.calcMFromL(L)
 
-        mu =  1.0 / (math.e * (M / 2) ) # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
-
-        newDistribution = QaryMemorylessDistribution(self.q)
+        if binningToUse == Binning.TalSharovVardy:
+            mu =  1.0 / (math.e * (M / 2) ) # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
+        elif binningToUse == Binning.PeregTal:
+            mu, indexOfBorderCell, maxProbOfBorderCell, gamma =  self.calcMuForPeregTal(M)
+        else:
+            assert(false)
 
         dims = [M for i in range(self.q-1)]
 
@@ -221,11 +229,24 @@ class QaryMemorylessDistribution:
 
         for yold, prob in enumerate(self.probs):
             probsum = sum(prob)
+            if probsum == 0.0:
+                continue
+
             cell = []
             for x in range(self.q - 1):
-                cell.append(self.calcCell_static_degrade(prob[x]/probsum, M, mu))
+                if binningToUse == Binning.TalSharovVardy:
+                    cell.append(self.calcCell_TalSharovVardy(prob[x]/probsum, M, mu))
+                else:
+                    cell.append(self.calcCell_PeregTal(prob[x]/probsum, M, mu, indexOfBorderCell, maxProbOfBorderCell, gamma))
 
             cellsArray[tuple(cell)] |= {yold}
+
+        return cellsArray
+
+    def degrade_static(self, L, binningToUse = Binning.TalSharovVardy):
+        # TODO: cells or bins?
+        cellsArray = self.putLettersInBins(L, binningToUse)
+        newDistribution = QaryMemorylessDistribution(self.q)
 
         for setOfY in np.nditer(cellsArray, flags=["refs_ok"]):
             actualSet = setOfY.item()
@@ -242,7 +263,7 @@ class QaryMemorylessDistribution:
         newDistribution.normalize() # for good measure
         return newDistribution
 
-    def calcCell_static_degrade(self, postProb, M, mu):
+    def calcCell_TalSharovVardy(self, postProb, M, mu):
         if postProb <= 1.0 / math.e:
             cell = floor(naturalEta(postProb) / mu)
         else:
@@ -399,31 +420,10 @@ class QaryMemorylessDistribution:
 
         return conversionToYNewMultipliers
 
-    def upgrade_static(self, L):
-        M = self.calcMFromL(L)
-
-        mu, indexOfBorderCell, maxProbOfBorderCell, alpha =  self.calcMuForUpgrading(M)
-
-        # print(mu, indexOfBorderCell, maxProbOfBorderCell, alpha)
-
+    def upgrade_static(self, L, binningToUse = Binning.PeregTal):
+        # TODO: cells or bins?
+        cellsArray = self.putLettersInBins(L, binningToUse)
         newDistribution = QaryMemorylessDistribution(self.q)
-
-        dims = [M for i in range(self.q-1)]
-
-        cellsArray = np.array([set() for _ in range(M ** (self.q-1))]).reshape(dims)
-
-        # first, put each output letter into the corresponding cell
-
-        for yold, prob in enumerate(self.probs):
-            probsum = sum(prob)
-            if probsum == 0.0:
-                continue
-
-            cell = []
-            for x in range(self.q - 1):
-                cell.append(self.calcCell_static_upgrade(prob[x]/probsum, M, mu, indexOfBorderCell, maxProbOfBorderCell, alpha))
-
-            cellsArray[tuple(cell)] |= {yold}
 
         # The first q symbols are the boost symbols
         allzeroprobvector = [0.0 for i in range(self.q)]
@@ -440,15 +440,13 @@ class QaryMemorylessDistribution:
         newDistribution.normalize() # for good measure
         return newDistribution
 
-    def upgradeCellToSymbolPlusBoosts(self, actualSet, newprobs):
+    def upgradeCellToSymbolPlusBoosts(self, actualSet, newprobs, ):
         ynewProb = [0.0 for i in range(self.q)]
         
         if len(actualSet) == 1:
             for yold in actualSet:
                 newprobs.append(self.probs[yold])
             return
-
-        # print("*")
 
         # find the leading input symbol
         leadingX = -1
@@ -470,7 +468,7 @@ class QaryMemorylessDistribution:
         cellPosteriorProb[leadingX] = 0.0
         
         for yold in actualSet:
-            probSum = sum(self.probs[yold])
+            probsum = sum(self.probs[yold])
             for x in range(self.q):
                 if x == leadingX:
                     continue
@@ -511,12 +509,14 @@ class QaryMemorylessDistribution:
             # print( cellPosteriorProb, debugProb, debugProbTwo )
             # print( cellPosteriorProb, debugProbTwo )
 
+
+
         newprobs.append(ynewProb)
 
-    def calcCell_static_upgrade(self, postProb, M, mu, indexOfBorderCell, maxProbOfBorderCell, alpha):
+    def calcCell_PeregTal(self, postProb, M, mu, indexOfBorderCell, maxProbOfBorderCell, gamma):
         if postProb > maxProbOfBorderCell:
             cellIndex = indexOfBorderCell + 1 + floor( (postProb - maxProbOfBorderCell) * mu )
-        elif postProb > 1.0 / alpha:
+        elif postProb > 1.0 / gamma:
             cellIndex = indexOfBorderCell
         else:
             cellIndex = floor( naturalEta(postProb) * mu )
@@ -526,30 +526,30 @@ class QaryMemorylessDistribution:
 
         return cellIndex
 
-    def calcMuForUpgrading(self, M):
+    def calcMuForPeregTal(self, M):
         """Calculate the value of the optimal (largest) mu, as well as other parameters of interest, for a given M."""
 
         # Consider Figure 3 in the IEEE-IT paper by Pereg and Tal.
-        # For brevity, let alpha = 1/e^2.
+        # For brevity, let gamma = 1/e^2.
         # Since larger mu implies a better bound in terms of the loss in mutual information,
         # we would like mu to be as large as possible, such that the number of cells is M
         # (no point in having the number of cells be less than M, since this means we can
         # enlarge mu). To find this largest possible mu, we will implement the following
         # algorithm. Let mu be given.
         # * Divide the cells to the left of the blue line exactly as in Figure 3. That is
-        # all the cells containing only probabilities less than or equal to alpha are ordered such
+        # all the cells containing only probabilities less than or equal to gamma are ordered such
         # that the difference between naturalEta of the left and right (min and max) probabilities
         # is exactly 1/mu.
-        # The number of these cells is floor(2 * alpha * mu), since naturalEta(alpha) = 2 * alpha
+        # The number of these cells is floor(2 * gamma * mu), since naturalEta(gamma) = 2 * gamma
         # Next, *unlike* Figure 3, divide the cells to the right of the blue line such that
         # the width of the right most cell (20 in the Figure) is exactly 1/mu, and keep
         # going left as long as you can; that is, as long as the cell does not contain probabilities
-        # strictly less than alpha. The number of these cells is exactly floor( (1-alpha) * mu ). Our first
+        # strictly less than gamma. The number of these cells is exactly floor( (1-gamma) * mu ). Our first
         # observation is that we must have a non-empty region that is not covered by cells. That is, if this
-        # were not the case, then both 2 * alpha * mu and (1-alpha) * mu had to be integers, which
-        # can't be the case, since alpha = 1/e^2 is irrational. Let us call this region the leftover cell.
+        # were not the case, then both 2 * gamma * mu and (1-gamma) * mu had to be integers, which
+        # can't be the case, since gamma = 1/e^2 is irrational. Let us call this region the leftover cell.
         # So, our total number of cells is
-        # floor(2 * alpha * mu) + floor( (1-alpha) * mu ) + 1
+        # floor(2 * gamma * mu) + floor( (1-gamma) * mu ) + 1
         # If the total number of cells is larger than M, we reduce mu
         # If the total number of cells is smaller than M, we enlarge mu
         # If the total number of cells is exactly M, then we will shortly describe what we do.
@@ -563,13 +563,13 @@ class QaryMemorylessDistribution:
         # cell. For the larger extreme mu (we are about to transition from having M cells into having M+1 cells)
         # the good condition does not hold, since a new cell is about to be born, either because the dotted
         # red line immediately to the right of the blue line is very close to 1/mu, or because the top most
-        # horizontal dotted red line to the left of the blue line almost naturalEta(alpha) - 1/mu. This, and the
-        # fact that we have some slack on the other side of the blue line (again, from the irrationality of alpha)
+        # horizontal dotted red line to the left of the blue line almost naturalEta(gamma) - 1/mu. This, and the
+        # fact that we have some slack on the other side of the blue line (again, from the irrationality of gamma)
         # implies that we are not fulfilling at least one of requirements of the good condition. 
         # Conversely, for the other extreme mu, the good condition is met. To see this, note that in the case,
         # either the dotted red line immediately to the right of the blue
         # line is almost touching it, or the vertical dotted red line immediately to the left of the blue line is
-        # almost touching it. For both cases, the good condition holds, since alpha is the point for which the
+        # almost touching it. For both cases, the good condition holds, since gamma is the point for which the
         # slope equals 1, and it is decreasing in p.
         # So, to sum up, if the number of good cells is M:
         # * if the good condition is met, we enlarge mu
@@ -579,13 +579,13 @@ class QaryMemorylessDistribution:
 
         muUpper = 2.0 * M
         muLower = 1.0
-        alpha = 1.0/(math.e ** 2)
+        gamma = 1.0/(math.e ** 2)
 
         while muUpper - muLower > 0.0000001:
             mu = (muUpper + muLower) / 2.0
-            cellsToLeftOfAlpha = floor(2.0 * alpha * mu) # for a given mu, this is exactly the number of cells to the left of alpha
-            cellsToRightOfAlpha = floor((1.0 - alpha) * mu)
-            totalCells = cellsToLeftOfAlpha + cellsToRightOfAlpha + 1
+            cellsToLeftOfGamma = floor(2.0 * gamma * mu) # for a given mu, this is exactly the number of cells to the left of gamma
+            cellsToRightOfGamma = floor((1.0 - gamma) * mu)
+            totalCells = cellsToLeftOfGamma + cellsToRightOfGamma + 1
             if totalCells < M: # mu too small
                 muLower = mu
                 continue
@@ -594,16 +594,16 @@ class QaryMemorylessDistribution:
                 continue
             
             # right side and left side mean left and right of blue line, respectively
-            maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfAlpha
+            maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfGamma
             maxEtaOfBorderCell = naturalEta(maxProbOfBorderCell) if maxProbOfBorderCell < 1.0 / math.e else naturalEta(1.0 / math.e)
-            minEtaOnLeftSideOfBorderCell = (1.0 / mu) * cellsToLeftOfAlpha
+            minEtaOnLeftSideOfBorderCell = (1.0 / mu) * cellsToLeftOfGamma
 
             if maxEtaOfBorderCell - minEtaOnLeftSideOfBorderCell > 1.0 / mu: # mu too large
                 muUpper = mu
                 continue
 
             if maxProbOfBorderCell > 1.0 / math.e:
-                minEtaOnRightSideOfBorderCell = min(naturalEta(maxProbOfBorderCell), naturalEta(alpha))
+                minEtaOnRightSideOfBorderCell = min(naturalEta(maxProbOfBorderCell), naturalEta(gamma))
                 if maxEtaOfBorderCell - minEtaOnRightSideOfBorderCell > 1.0 / mu: # mu too large
                     muUpper = mu
                     continue
@@ -620,15 +620,15 @@ class QaryMemorylessDistribution:
         mu = muLower
 
         # re-calculate key parameters
-        cellsToLeftOfAlpha = floor(2.0 * alpha * mu) # for a given mu, this is exactly the number of cells to the left of alpha
-        cellToRightOfAlpha = floor((1.0 - alpha) * mu)
+        cellsToLeftOfGamma = floor(2.0 * gamma * mu) # for a given mu, this is exactly the number of cells to the left of gamma
+        cellsToRightOfGamma = floor((1.0 - gamma) * mu)
 
-        # print(cellsToLeftOfAlpha, cellsToRightOfAlpha, mu, alpha)
-        assert( cellsToLeftOfAlpha + cellsToRightOfAlpha + 1 == M )
-        indexOfBorderCell  = cellsToLeftOfAlpha
-        maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfAlpha
+        # print(cellsToLeftOfGamma, cellsToRightOfGamma, mu, gamma)
+        assert( cellsToLeftOfGamma + cellsToRightOfGamma + 1 == M )
+        indexOfBorderCell  = cellsToLeftOfGamma
+        maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfGamma
 
-        return mu, indexOfBorderCell, maxProbOfBorderCell, alpha
+        return mu, indexOfBorderCell, maxProbOfBorderCell, gamma
 
     def calcNewOutputAlphabetSize(self, oneHotBinaryMemorylessDistributions):
         newOutputAlphabetSize = 1

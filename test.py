@@ -158,8 +158,8 @@ def qupgrade_static():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    # n = 5
-    n = 2
+    n = 5
+    # n = 1
     L = 400
     
     channels = []
@@ -190,7 +190,7 @@ def upgradeSimple():
     transformed = transformed.minusTransform()
 
     print(transformed)
-    upgraded = transformed.upgrade(3)
+    upgraded = transformed.upgrade_static(400)
     print(upgraded)
 
 def qdegradeSimple():
@@ -240,7 +240,7 @@ def qupgradeSimple():
 
     q = 3
     p = 0.11
-    L = 16
+    L = 400
 
     qsc = QaryMemorylessDistribution.makeQSC(q, p)
     transformed = qsc
@@ -249,14 +249,15 @@ def qupgradeSimple():
     # transformed = qec
 
     transformed = transformed.plusTransform()
-    transformed = transformed.degrade(100)
-    # transformed = transformed.minusTransform()
+    transformed = transformed.degrade_static(L)
+    # transformed = transformed.upgrade_static(L)
+    transformed = transformed.minusTransform()
 
     print("original")
     print(transformed)
-    oneHot = transformed.oneHotBinaryMemorylessDistributions()
+    # oneHot = transformed.oneHotBinaryMemorylessDistributions()
 
-    upgraded = transformed.upgrade(L)
+    upgraded = transformed.upgrade_static(L)
 
     # print( oneHot[0] )
     # upgraded = oneHot[0].upgrade(3)
@@ -266,18 +267,18 @@ def qupgradeSimple():
     # upgraded = transformed.upgrade(3)
     # print(upgraded)
 
-    oneHotUpgraded = upgraded.oneHotBinaryMemorylessDistributions()
-    print("transformed one-hot")
-    print(oneHotUpgraded[0])
-    print(oneHotUpgraded[1])
+    # oneHotUpgraded = upgraded.oneHotBinaryMemorylessDistributions()
+    # print("transformed one-hot")
+    # print(oneHotUpgraded[0])
+    # print(oneHotUpgraded[1])
 
 # bdegrade()
 # bupgrade()
-# qupgradeSimple()
 # qdegrade()
-# qdegrade_static()
+qdegrade_static()
 # qupgrade()
-qupgrade_static()
+# qupgrade_static()
 # qdegradeSimple()
+# qupgradeSimple()
 
 # cProfile.run('qupgrade()')

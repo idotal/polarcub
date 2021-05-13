@@ -70,9 +70,12 @@ def qdegrade_static():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    n = 5
-    # n = 2
+    # n = 5
+    n = 2
     L = 400
+
+    binningToUse = QaryMemorylessDistribution.Binning.TalSharovVardy # standard for degrading
+    # binningToUse = QaryMemorylessDistribution.Binning.PeregTal # non-standard
     
     channels = []
     channels.append([])
@@ -81,8 +84,8 @@ def qdegrade_static():
     for m in range(1,n+1):
         channels.append([])
         for channel in channels[m-1]:
-            channels[m].append(channel.minusTransform().degrade_static(L))
-            channels[m].append(channel.plusTransform().degrade_static(L))
+            channels[m].append(channel.minusTransform().degrade_static(L, binningToUse))
+            channels[m].append(channel.plusTransform().degrade_static(L, binningToUse))
     
     entropySum = 0.0
     
@@ -158,9 +161,12 @@ def qupgrade_static():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    n = 5
-    # n = 1
+    # n = 5
+    n = 2
     L = 400
+
+    binningToUse = QaryMemorylessDistribution.Binning.PeregTal # standard for upgrading
+    # binningToUse = QaryMemorylessDistribution.Binning.TalSharovVardy # non-standard
     
     channels = []
     channels.append([])
@@ -169,8 +175,8 @@ def qupgrade_static():
     for m in range(1,n+1):
         channels.append([])
         for channel in channels[m-1]:
-            channels[m].append(channel.minusTransform().upgrade_static(L))
-            channels[m].append(channel.plusTransform().upgrade_static(L))
+            channels[m].append(channel.minusTransform().upgrade_static(L, binningToUse))
+            channels[m].append(channel.plusTransform().upgrade_static(L, binningToUse))
     
     entropySum = 0.0
     
@@ -241,6 +247,8 @@ def qupgradeSimple():
     q = 3
     p = 0.11
     L = 400
+    # binningToUse = QaryMemorylessDistribution.Binning.TalSharovVardy 
+    binningToUse = QaryMemorylessDistribution.Binning.PeregTal
 
     qsc = QaryMemorylessDistribution.makeQSC(q, p)
     transformed = qsc
@@ -249,35 +257,37 @@ def qupgradeSimple():
     # transformed = qec
 
     transformed = transformed.plusTransform()
-    transformed = transformed.degrade_static(L)
+    transformed = transformed.degrade(L)
     # transformed = transformed.upgrade_static(L)
     transformed = transformed.minusTransform()
 
     print("original")
     print(transformed)
-    # oneHot = transformed.oneHotBinaryMemorylessDistributions()
 
     upgraded = transformed.upgrade_static(L)
 
-    # print( oneHot[0] )
-    # upgraded = oneHot[0].upgrade(3)
-
     print("upgraded")
     print( upgraded )
-    # upgraded = transformed.upgrade(3)
-    # print(upgraded)
 
-    # oneHotUpgraded = upgraded.oneHotBinaryMemorylessDistributions()
-    # print("transformed one-hot")
-    # print(oneHotUpgraded[0])
-    # print(oneHotUpgraded[1])
+    degraded = transformed.degrade_static(L)
+
+    print("degraded")
+    print( degraded )
+
+    # TODO: remove this
+    # degraded = transformed.degrade_static(L)
+    #
+    # print("degraded")
+    # print( degraded )
+    
+
 
 # bdegrade()
 # bupgrade()
 # qdegrade()
 qdegrade_static()
 # qupgrade()
-# qupgrade_static()
+qupgrade_static()
 # qdegradeSimple()
 # qupgradeSimple()
 

@@ -499,7 +499,7 @@ class QaryMemorylessDistribution:
                 # for the boost symbol
                 newprobs[x][x] += (1.0 - alphaxy) * self.probs[yold][x]
             
-            debugProbTwo = self.probs[yold]
+            debugProbTwo = self.probs[yold].copy()
             debugSum = sum(debugProb)
             debugSumTwo = sum(debugProbTwo)
             for x in range(self.q):

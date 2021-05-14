@@ -257,19 +257,19 @@ def qupgradeSimple():
     # transformed = qec
 
     transformed = transformed.plusTransform()
-    transformed = transformed.degrade(L)
-    # transformed = transformed.upgrade_static(L)
+    # transformed = transformed.degrade(L)
+    transformed = transformed.upgrade_static(L)
     transformed = transformed.minusTransform()
 
-    print("original")
-    print(transformed)
+    # print("original")
+    # print(transformed)
 
     upgraded = transformed.upgrade_static(L)
 
     print("upgraded")
     print( upgraded )
 
-    degraded = transformed.degrade_static(L)
+    degraded = transformed.degrade_static(L, binningToUse)
 
     print("degraded")
     print( degraded )
@@ -285,10 +285,10 @@ def qupgradeSimple():
 # bdegrade()
 # bupgrade()
 # qdegrade()
-qdegrade_static()
+# qdegrade_static()
 # qupgrade()
-qupgrade_static()
+# qupgrade_static()
 # qdegradeSimple()
-# qupgradeSimple()
+qupgradeSimple()
 
 # cProfile.run('qupgrade()')

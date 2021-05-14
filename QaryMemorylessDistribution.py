@@ -440,8 +440,11 @@ class QaryMemorylessDistribution:
         newDistribution.normalize() # for good measure
         return newDistribution
 
-    def upgradeCellToSymbolPlusBoosts(self, actualSet, newprobs, ):
+    def upgradeCellToSymbolPlusBoosts(self, actualSet, newprobs):
         ynewProb = [0.0 for i in range(self.q)]
+
+        if 71 in actualSet:
+            print( "check this!")
         
         if len(actualSet) == 1:
             for yold in actualSet:
@@ -468,7 +471,7 @@ class QaryMemorylessDistribution:
         cellPosteriorProb[leadingX] = 0.0
         
         for yold in actualSet:
-            probsum = sum(self.probs[yold])
+            probSum = sum(self.probs[yold])
             for x in range(self.q):
                 if x == leadingX:
                     continue
@@ -507,9 +510,11 @@ class QaryMemorylessDistribution:
                 debugProbTwo[x] /= debugSumTwo
 
             # print( cellPosteriorProb, debugProb, debugProbTwo )
-            # print( cellPosteriorProb, debugProbTwo )
+            print( cellPosteriorProb, debugProbTwo )
 
 
+
+        print(" * ", ynewProb)
 
         newprobs.append(ynewProb)
 

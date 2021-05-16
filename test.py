@@ -161,8 +161,7 @@ def qupgrade_static():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    # n = 5
-    n = 2
+    n = 5
     L = 400
 
     binningToUse = QaryMemorylessDistribution.Binning.PeregTal # standard for upgrading
@@ -274,21 +273,14 @@ def qupgradeSimple():
     print("degraded")
     print( degraded )
 
-    # TODO: remove this
-    # degraded = transformed.degrade_static(L)
-    #
-    # print("degraded")
-    # print( degraded )
-    
-
 
 # bdegrade()
 # bupgrade()
 # qdegrade()
 # qdegrade_static()
-# qupgrade()
-# qupgrade_static()
+qupgrade()
+qupgrade_static()
 # qdegradeSimple()
-qupgradeSimple()
+# qupgradeSimple()
 
 # cProfile.run('qupgrade()')

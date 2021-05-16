@@ -382,18 +382,18 @@ if use_fast == True:
     hxgiveny = fast_hxgiveny
 else:
     def eta(p):
-        assert 0 <= p <= 1
+        assert 0.0 <= p <= 1.0
     
-        if p == 0:
-            return 0
+        if p == 0.0:
+            return 0.0
         else:
             return -p * math.log2(p)
 
     def naturalEta(p):
-        assert 0 <= p <= 1
+        assert 0.0 <= p <= 1.0
     
-        if p == 0:
-            return 0
+        if p == 0.0:
+            return 0.0
         else:
             return -p * math.log(p)
 

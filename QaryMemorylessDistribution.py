@@ -37,23 +37,36 @@ class QaryMemorylessDistribution:
 
     # polar toolbox
     def errorProb(self):
-        totalProbSum = 0.0
-        noErrorProbSum = 0.0
+        total = 0.0
 
         for probTuple in self.probs:
-            totalProbSum += sum(probTuple)
-            noErrorProbSum += max(probTuple)
+            tempProbTuple = probTuple.copy()
+            tempProbTuple.sort()
+            total += sum( tempProbTuple[:-1] )
 
-        return totalProbSum - noErrorProbSum
+        return total
+
+        # totalProbSum = 0.0
+        # noErrorProbSum = 0.0
+        #
+        # for probTuple in self.probs:
+        #     totalProbSum += sum(probTuple)
+        #     noErrorProbSum += max(probTuple)
+        #
+        # return totalProbSum - noErrorProbSum
 
     def conditionalEntropy(self):
         entropySum = 0.0
 
         for probTuple in self.probs:
+            # debugDelta = 0.0
             for p in probTuple:
                 entropySum += eta(p)
+                # debugDelta += eta(p)
 
             entropySum -= eta(sum(probTuple))
+            # debugDelta -= eta(sum(probTuple))
+            # print( debugDelta, probTuple )
 
         return entropySum
 
@@ -443,9 +456,6 @@ class QaryMemorylessDistribution:
     def upgradeCellToSymbolPlusBoosts(self, actualSet, newprobs):
         ynewProb = [0.0 for i in range(self.q)]
 
-        if 71 in actualSet:
-            print( "check this!")
-        
         if len(actualSet) == 1:
             for yold in actualSet:
                 newprobs.append(self.probs[yold])
@@ -485,8 +495,9 @@ class QaryMemorylessDistribution:
         # to regular symbols (13a) and boost symbols (13b)
         ynewProb = [0.0 for i in range(self.q)]
 
+        # print( actualSet )
         for yold in actualSet:
-            debugProb = [0.0 for i in range(self.q)]
+            # debugProb = [0.0 for i in range(self.q)]
             for x in range(self.q):
                 if self.probs[yold][x] > 0.0:
                     alphaxy = (cellPosteriorProb[x] / self.probs[yold][x]) * (self.probs[yold][leadingX] / cellPosteriorProb[leadingX] )
@@ -497,24 +508,24 @@ class QaryMemorylessDistribution:
 
                 # Now that we've calculate alphaxy, calculate the probability to add
                 ynewProb[x] += self.probs[yold][x] * alphaxy
-                debugProb[x] = self.probs[yold][x] * alphaxy
+                # debugProb[x] = self.probs[yold][x] * alphaxy
 
                 # for the boost symbol
                 newprobs[x][x] += (1.0 - alphaxy) * self.probs[yold][x]
             
-            debugProbTwo = self.probs[yold].copy()
-            debugSum = sum(debugProb)
-            debugSumTwo = sum(debugProbTwo)
-            for x in range(self.q):
-                debugProb[x] /= debugSum
-                debugProbTwo[x] /= debugSumTwo
+            # debugProbTwo = self.probs[yold].copy()
+            # debugSum = sum(debugProb)
+            # debugSumTwo = sum(debugProbTwo)
+            # for x in range(self.q):
+            #     debugProb[x] /= debugSum
+            #     debugProbTwo[x] /= debugSumTwo
 
             # print( cellPosteriorProb, debugProb, debugProbTwo )
-            print( cellPosteriorProb, debugProbTwo )
+            # print( self.probs[yold], cellPosteriorProb, debugProbTwo )
 
 
 
-        print(" * ", ynewProb)
+        # print(" * ", ynewProb)
 
         newprobs.append(ynewProb)
 

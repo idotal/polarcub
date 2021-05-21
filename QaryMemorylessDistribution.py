@@ -221,6 +221,7 @@ class QaryMemorylessDistribution:
                 newDistribution.probs[ynew][x] += yoldprobs[x]
 
         newDistribution.removeZeroProbOutput()
+        newDistribution.normalize() # for good measure
 
         return newDistribution
 
@@ -234,9 +235,9 @@ class QaryMemorylessDistribution:
         else:
             assert(false)
 
-        dims = [M for i in range(self.q-1)]
+        dims = [M for i in range(self.q)]
 
-        cellsArray = np.array([set() for _ in range(M ** (self.q-1))]).reshape(dims)
+        cellsArray = np.array([set() for _ in range(M ** (self.q))]).reshape(dims)
 
         # first, put each output letter into the corresponding cell
 
@@ -246,7 +247,7 @@ class QaryMemorylessDistribution:
                 continue
 
             cell = []
-            for x in range(self.q - 1):
+            for x in range(self.q):
                 if binningToUse == Binning.TalSharovVardy:
                     cell.append(self.calcCell_TalSharovVardy(prob[x]/probsum, M, mu))
                 else:
@@ -326,6 +327,7 @@ class QaryMemorylessDistribution:
             self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
         newDistribution.removeZeroProbOutput()
+        newDistribution.normalize() # for good measure
 
         return newDistribution
 
@@ -495,9 +497,9 @@ class QaryMemorylessDistribution:
         # to regular symbols (13a) and boost symbols (13b)
         ynewProb = [0.0 for i in range(self.q)]
 
-        # print( actualSet )
+        print( actualSet )
         for yold in actualSet:
-            # debugProb = [0.0 for i in range(self.q)]
+            debugProb = [0.0 for i in range(self.q)]
             for x in range(self.q):
                 if self.probs[yold][x] > 0.0:
                     alphaxy = (cellPosteriorProb[x] / self.probs[yold][x]) * (self.probs[yold][leadingX] / cellPosteriorProb[leadingX] )
@@ -508,24 +510,24 @@ class QaryMemorylessDistribution:
 
                 # Now that we've calculate alphaxy, calculate the probability to add
                 ynewProb[x] += self.probs[yold][x] * alphaxy
-                # debugProb[x] = self.probs[yold][x] * alphaxy
+                debugProb[x] = self.probs[yold][x] * alphaxy
 
                 # for the boost symbol
                 newprobs[x][x] += (1.0 - alphaxy) * self.probs[yold][x]
             
-            # debugProbTwo = self.probs[yold].copy()
-            # debugSum = sum(debugProb)
-            # debugSumTwo = sum(debugProbTwo)
-            # for x in range(self.q):
-            #     debugProb[x] /= debugSum
-            #     debugProbTwo[x] /= debugSumTwo
+            debugProbTwo = self.probs[yold].copy()
+            debugSum = sum(debugProb)
+            debugSumTwo = sum(debugProbTwo)
+            for x in range(self.q):
+                debugProb[x] /= debugSum
+                debugProbTwo[x] /= debugSumTwo
 
             # print( cellPosteriorProb, debugProb, debugProbTwo )
-            # print( self.probs[yold], cellPosteriorProb, debugProbTwo )
+            print( self.probs[yold], cellPosteriorProb, debugProbTwo )
 
 
 
-        # print(" * ", ynewProb)
+        print(" * ", ynewProb)
 
         newprobs.append(ynewProb)
 
@@ -625,7 +627,7 @@ class QaryMemorylessDistribution:
                     continue
 
             # is the width of the border cell greater than 1/mu?
-            if naturalEta(maxProbOfBorderCell - 1.0/mu) > minEtaOnLeftSideOfBorderCell: # mu too large
+            if maxProbOfBorderCell > 1.0/mu and naturalEta(maxProbOfBorderCell - 1.0/mu) > minEtaOnLeftSideOfBorderCell: # mu too large
                 muUpper = mu
                 continue
 
@@ -724,4 +726,44 @@ def makeQEC(q, p):
     qec.append(tempProbs)
 
     return qec
-    
+
+def makeInputDistribution(probs):
+    dist = QaryMemorylessDistribution(len(probs))
+    dist.append(probs)
+    dist.normalize() # for good measure
+
+    return dist
+
+# My conjecture is that the mutual information of this channel, in the limit is log2(q) - q \cdot \frac{\int_0^1 -p log2(p) (1-p)^{q-1}}{\int_0^1 (1-p)^{q-1}}
+def makeQuantizedUniform(q, T):
+    """Make a joint distribution such that for an input x and an output (a_0,a_1,...,a_{q-1}), where the a_i are non-negative and sum to T, the joint probability is a_x / M, where M is the number of possible outputs. That is, the number of non-negative vectors  (a_0,a_1,...,a_{q-1}), whose entries sum to L. That is, M = binom{L + q - 1}{q-1}. See the paper by Tal, On the construction of polar codes for channels with moderate input alphabet sizes, and the paper by Kartowsky and Tal, Greedy-Merge Degrading has Optimal Power-Law, in which this channel is proven to be hard to degrade and hard to upgrade, respectively."""
+    # M is the number of output letters we will produce
+    M = math.comb(T + q - 1, q-1) 
+
+    quantizedUniform = QaryMemorylessDistribution(q)
+
+    outputLetter = []
+    level = q
+
+    recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level, T, M)
+
+    return quantizedUniform
+
+def recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level, T, M):
+    if level == 0:
+        prob = []
+        for x in range(quantizedUniform.q):
+            prob.append((1.0 * outputLetter[x])/(M*T))
+        quantizedUniform.probs.append(prob)
+        return
+
+    if level == 1:
+        outputLetter.append(T - sum(outputLetter))
+        recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level-1, T, M)
+        outputLetter.pop()
+        return
+
+    for t in range(0, T+1 - sum(outputLetter)):
+        outputLetter.append(t)
+        recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level-1, T, M)
+        outputLetter.pop()

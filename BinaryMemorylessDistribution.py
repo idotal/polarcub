@@ -382,7 +382,9 @@ if use_fast == True:
     hxgiveny = fast_hxgiveny
 else:
     def eta(p):
-        assert 0.0 <= p <= 1.0
+        assert 0.0 <= p <= 1.0 + 10*sys.float_info.epsilon
+
+        p = min(1.0, p)
     
         if p == 0.0:
             return 0.0

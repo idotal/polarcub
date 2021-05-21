@@ -242,13 +242,15 @@ def qdegradeSimple():
     # print(oneHotUpgraded[1])
 
 def qupgradeSimple():
-
+      
     q = 3
     p = 0.11
     L = 400
     # binningToUse = QaryMemorylessDistribution.Binning.TalSharovVardy 
     binningToUse = QaryMemorylessDistribution.Binning.PeregTal
 
+    # probs = [0.8,0.1,0.1]
+    # qsc = QaryMemorylessDistribution.makeInputDistribution(probs)
     qsc = QaryMemorylessDistribution.makeQSC(q, p)
     transformed = qsc
 
@@ -260,27 +262,111 @@ def qupgradeSimple():
     transformed = transformed.upgrade_static(L)
     transformed = transformed.minusTransform()
 
-    # print("original")
-    # print(transformed)
+    print("original")
+    print(transformed)
+
+
+    M = transformed.calcMFromL(L)
+    mu = transformed.calcMuForPeregTal(M)
+
+    print( "mu =", mu)
 
     upgraded = transformed.upgrade_static(L)
 
     print("upgraded")
     print( upgraded )
 
-    degraded = transformed.degrade_static(L, binningToUse)
+    # degraded = transformed.degrade_static(L, binningToUse)
+    #
+    # print("degraded")
+    # print( degraded )
 
-    print("degraded")
-    print( degraded )
+def qupgradeInputDistribution():
+    probs = [0.8,0.1,0.1]
+    inputDist = QaryMemorylessDistribution.makeInputDistribution(probs)
+
+    print( "base entropy = ", inputDist.conditionalEntropy() )
+    
+    n = 5
+    L = 100
+    
+    channels = []
+    channels.append([])
+    channels[0].append(inputDist)
+    
+    for m in range(1,n+1):
+        channels.append([])
+        for channel in channels[m-1]:
+            channels[m].append(channel.minusTransform().upgrade(L))
+            channels[m].append(channel.plusTransform().upgrade(L))
+    
+    entropySum = 0.0
+    
+    for channel in channels[m]:
+        # print(channel.probs)
+        print( channel.conditionalEntropy() )
+        entropySum += channel.conditionalEntropy()
+    
+    print( "average entropy = ", entropySum / 2**n )
+
+def qupgradeInputDistribution_static():
+    probs = [0.8,0.1,0.1]
+    inputDist = QaryMemorylessDistribution.makeInputDistribution(probs)
+
+    print( "base entropy = ", inputDist.conditionalEntropy() )
+    
+    n = 5
+    L = 100
+    
+    channels = []
+    channels.append([])
+    channels[0].append(inputDist)
+    
+    for m in range(1,n+1):
+        channels.append([])
+        for channel in channels[m-1]:
+            channels[m].append(channel.minusTransform().upgrade_static(L))
+            channels[m].append(channel.plusTransform().upgrade_static(L))
+    
+    entropySum = 0.0
+    
+    for channel in channels[m]:
+        # print(channel.probs)
+        print( channel.conditionalEntropy() )
+        entropySum += channel.conditionalEntropy()
+    
+    print( "average entropy = ", entropySum / 2**n )
+def qupgradeUniform():
+    q = 3
+    T = 400
+    MM = 10
+    original = QaryMemorylessDistribution.makeQuantizedUniform(q, T)
+    
+    print("*",  original.conditionalEntropy() )
+
+    for M in range(2,MM+1):
+        L = M ** (q-1)
+        transformed = original.upgrade_static(L)
+        print( transformed.conditionalEntropy() )
+
+    print("*")
+
+    for M in range(2,MM+1):
+        L = M ** (q-1)
+        transformed = original.upgrade(L)
+        print( transformed.conditionalEntropy() )
+
 
 
 # bdegrade()
 # bupgrade()
 # qdegrade()
 # qdegrade_static()
-qupgrade()
-qupgrade_static()
+# qupgrade()
+# qupgrade_static()
 # qdegradeSimple()
-# qupgradeSimple()
-
+qupgradeSimple()
+# qupgradeUniform()
+# qupgradeInputDistribution()
+# qupgradeInputDistribution_static()
 # cProfile.run('qupgrade()')

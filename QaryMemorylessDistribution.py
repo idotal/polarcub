@@ -35,6 +35,9 @@ class QaryMemorylessDistribution:
     def append(self, item):
         self.probs.append(item)
 
+    def calcOutputAlphabetSize(self):
+        return len(self.probs)
+
     # polar toolbox
     def errorProb(self):
         total = 0.0
@@ -69,6 +72,17 @@ class QaryMemorylessDistribution:
             # print( debugDelta, probTuple )
 
         return entropySum
+
+    def totalVariation(self):
+        totalVariationSum = 0.0
+
+        for probTuple in self.probs:
+            for p1 in probTuple:
+                for p2 in probTuple:
+                    totalVariationSum += abs(p1-p2)
+
+        totalVariationSum /= 2*(self.q - 1)
+        return totalVariationSum
 
     def oneHotBinaryMemorylessDistributions(self):
         """Return q-1 one-hot binary channels.
@@ -227,6 +241,7 @@ class QaryMemorylessDistribution:
 
     def putLettersInBins(self, L, binningToUse):
         M = self.calcMFromL(L)
+        # M = (self.q-1) * M # allow for at least L "non-empty" cells in the worst case (in order to have a fair comparison with the dynamic method)
 
         if binningToUse == Binning.TalSharovVardy:
             mu =  1.0 / (math.e * (M / 2) ) # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
@@ -497,9 +512,9 @@ class QaryMemorylessDistribution:
         # to regular symbols (13a) and boost symbols (13b)
         ynewProb = [0.0 for i in range(self.q)]
 
-        print( actualSet )
+        # print( actualSet )
         for yold in actualSet:
-            debugProb = [0.0 for i in range(self.q)]
+            # debugProb = [0.0 for i in range(self.q)]
             for x in range(self.q):
                 if self.probs[yold][x] > 0.0:
                     alphaxy = (cellPosteriorProb[x] / self.probs[yold][x]) * (self.probs[yold][leadingX] / cellPosteriorProb[leadingX] )
@@ -510,24 +525,24 @@ class QaryMemorylessDistribution:
 
                 # Now that we've calculate alphaxy, calculate the probability to add
                 ynewProb[x] += self.probs[yold][x] * alphaxy
-                debugProb[x] = self.probs[yold][x] * alphaxy
+                # debugProb[x] = self.probs[yold][x] * alphaxy
 
                 # for the boost symbol
                 newprobs[x][x] += (1.0 - alphaxy) * self.probs[yold][x]
             
-            debugProbTwo = self.probs[yold].copy()
-            debugSum = sum(debugProb)
-            debugSumTwo = sum(debugProbTwo)
-            for x in range(self.q):
-                debugProb[x] /= debugSum
-                debugProbTwo[x] /= debugSumTwo
+            # debugProbTwo = self.probs[yold].copy()
+            # debugSum = sum(debugProb)
+            # debugSumTwo = sum(debugProbTwo)
+            # for x in range(self.q):
+            #     debugProb[x] /= debugSum
+            #     debugProbTwo[x] /= debugSumTwo
 
             # print( cellPosteriorProb, debugProb, debugProbTwo )
-            print( self.probs[yold], cellPosteriorProb, debugProbTwo )
+            # print( self.probs[yold], cellPosteriorProb, debugProbTwo )
 
 
 
-        print(" * ", ynewProb)
+        # print(" * ", ynewProb)
 
         newprobs.append(ynewProb)
 
@@ -749,6 +764,32 @@ def makeQuantizedUniform(q, T):
 
     return quantizedUniform
 
+# # For now, three points equally spaced on the unit circle, with 2-D Gaussian noise
+# # Generalize to multiple dimensions later
+# def makeMultivariateNormal(sigmaSquare, gridMax, gridMin, gridPoints):
+#     q = 3
+#     dist = QaryMemorylessDistribution(q)
+#
+#     points = []
+#     for p in range(q):
+#         points.append([math.cos(p*2*math.pi/q), math.sin(p*2*math.pi/q)])
+#
+#     dist = QaryMemorylessDistribution(q)
+#     for ix in range(gridPoints):
+#         for iy in range(gridPoints):
+#             x = gridMin + ix * (gridMax-gridMin)/(gridPoints-1)
+#             y = gridMin + iy * (gridMax-gridMin)/(gridPoints-1)
+#
+#             prob = []
+#             for p in range(q):
+#                 prob.append(math.exp(-((x-points[p][0])**2 + (y-points[p][1])**2)/sigmaSquare))
+#
+#             dist.probs.append(prob)
+#
+#     dist.normalize()
+#
+#     return dist
+
 def recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level, T, M):
     if level == 0:
         prob = []
@@ -767,3 +808,34 @@ def recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level, T, M)
         outputLetter.append(t)
         recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level-1, T, M)
         outputLetter.pop()
+
+def degrade_dynamic_upper_bound(q, L):
+    # Taken from equation (27) in the paper by Ordentlich and Tal
+
+    # TODO: code duplication from calcMFromL
+    M = floor( L ** (1.0/(q-1)) + sys.float_info.epsilon )
+
+    return (64*(q-1)/(M**2))/math.log(2) # divide by log(2) to get bits, not nats
+
+def upgrade_dynamic_upper_bound(q, L):
+    # Taken from equation (13) in the paper by Ordentlich and Tal
+
+    # TODO: code duplication from calcMFromL
+    M = floor( L ** (1.0/(q-1)) + sys.float_info.epsilon )
+
+    return (128*(q-1)/(M**2))/math.log(2) # divide by log(2) to get bits, not nats
+
+def degrade_cost_lower_bound(q, L):
+    # Taken from equation (3) in the paper by Tal "On the Construction of Polar Codes for Channels with Moderate Input Alphabet Sizes"
+
+    sigma = (math.pi ** ((q-1)/2))/(math.gamma( (q-1)/2 + 1 ) )
+
+    return (q-1)/(2*(q+1)) * ( (1.0/(sigma * math.factorial(q-1) * L))**(2/(q-1)) )/math.log(2)
+
+def upgrade_cost_lower_bound(q, L):
+    # Taken from equation (43) in the paper by Kartowsky and Tal
+
+    kappa = (q-1)/(2*math.pi*(q+1))*(math.gamma(1 + (q-1)/2)/math.factorial(q-1))
+
+    return kappa*(L**(-2/(q-1)))/math.log(2)
+

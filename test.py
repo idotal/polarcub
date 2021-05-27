@@ -70,8 +70,7 @@ def qdegrade_static():
     
     print( "base capacity = ", log2(q) - qsc.conditionalEntropy() )
     
-    # n = 5
-    n = 2
+    n = 5
     L = 400
 
     binningToUse = QaryMemorylessDistribution.Binning.TalSharovVardy # standard for degrading
@@ -282,13 +281,15 @@ def qupgradeSimple():
     # print( degraded )
 
 def qupgradeInputDistribution():
-    probs = [0.8,0.1,0.1]
+    probs = [0.34,0.33,0.33]
     inputDist = QaryMemorylessDistribution.makeInputDistribution(probs)
 
     print( "base entropy = ", inputDist.conditionalEntropy() )
+    print( "probs = ", probs )
     
-    n = 5
+    n = 8
     L = 100
+    tvLimit = 0.001
     
     channels = []
     channels.append([])
@@ -301,22 +302,28 @@ def qupgradeInputDistribution():
             channels[m].append(channel.plusTransform().upgrade(L))
     
     entropySum = 0.0
+    goodCount = 0
     
     for channel in channels[m]:
         # print(channel.probs)
-        print( channel.conditionalEntropy() )
+        print( channel.conditionalEntropy(), channel.totalVariation() )
         entropySum += channel.conditionalEntropy()
+        if channel.totalVariation() < tvLimit:
+            goodCount += 1
     
     print( "average entropy = ", entropySum / 2**n )
+    print( "pass tvLimit of ", tvLimit, " = ", goodCount )
 
 def qupgradeInputDistribution_static():
-    probs = [0.8,0.1,0.1]
+    probs = [0.34,0.33,0.33]
     inputDist = QaryMemorylessDistribution.makeInputDistribution(probs)
 
     print( "base entropy = ", inputDist.conditionalEntropy() )
+    print( "probs = ", probs )
     
-    n = 5
+    n = 8
     L = 100
+    tvLimit = 0.001
     
     channels = []
     channels.append([])
@@ -329,32 +336,151 @@ def qupgradeInputDistribution_static():
             channels[m].append(channel.plusTransform().upgrade_static(L))
     
     entropySum = 0.0
+    goodCount = 0
     
     for channel in channels[m]:
         # print(channel.probs)
-        print( channel.conditionalEntropy() )
+        print( channel.conditionalEntropy(), channel.totalVariation() )
         entropySum += channel.conditionalEntropy()
+        if channel.totalVariation() < tvLimit:
+            goodCount += 1
     
     print( "average entropy = ", entropySum / 2**n )
-def qupgradeUniform():
-    q = 3
-    T = 400
-    MM = 10
-    original = QaryMemorylessDistribution.makeQuantizedUniform(q, T)
-    
-    print("*",  original.conditionalEntropy() )
+    print( "pass tvLimit of ", tvLimit, " = ", goodCount )
 
+def qupgradeMultivariateNormal():
+    sigmaSquare = 0.1
+    gridMax = 2.0
+    gridMin = -2.0
+    gridPoints = 100
+
+    q = 3
+    MM = 20
+    original = QaryMemorylessDistribution.makeMultivariateNormal(sigmaSquare, gridMax, gridMin, gridPoints)
+
+    originalEntropy = original.conditionalEntropy()
+    print("*",  originalEntropy)
+
+    # print("* upper bound on difference, equation (13) in Ordentlich and Tal")
+    # for L in range(10,730,20):
+    #     print(L, QaryMemorylessDistribution.upgrade_dynamic_upper_bound(q, L))
+    #
+    # print("* lower bound on upgrading cost, equation (43) in Kartowsky and Tal")
+    # for L in range(10,730,20):
+    #     print(L, QaryMemorylessDistribution.upgrade_cost_lower_bound(q, L))
+
+    print("* static upgrade")
     for M in range(2,MM+1):
         L = M ** (q-1)
         transformed = original.upgrade_static(L)
-        print( transformed.conditionalEntropy() )
+        print( transformed.calcOutputAlphabetSize(), originalEntropy-transformed.conditionalEntropy() )
 
-    print("*")
+    print("* dynamic upgrade")
 
+    MM = 27
     for M in range(2,MM+1):
         L = M ** (q-1)
         transformed = original.upgrade(L)
-        print( transformed.conditionalEntropy() )
+        print( transformed.calcOutputAlphabetSize(), originalEntropy-transformed.conditionalEntropy() )
+
+# def qdegradeMultivariateNormal():
+#     sigmaSquare = 0.05
+#     gridMax = 1.2
+#     gridMin = -1.2
+#     gridPoints = 400
+#
+#     q = 3
+#     MM = 20
+#     original = QaryMemorylessDistribution.makeMultivariateNormal(sigmaSquare, gridMax, gridMin, gridPoints)
+#
+#     originalEntropy = original.conditionalEntropy()
+#     print("*",  originalEntropy)
+#
+#     # print("* upper bound on difference, equation (13) in Ordentlich and Tal")
+#     # for L in range(10,730,20):
+#     #     print(L, QaryMemorylessDistribution.upgrade_dynamic_upper_bound(q, L))
+#     #
+#     # print("* lower bound on upgrading cost, equation (43) in Kartowsky and Tal")
+#     # for L in range(10,730,20):
+#     #     print(L, QaryMemorylessDistribution.upgrade_cost_lower_bound(q, L))
+#
+#     print("* static degrade")
+#     for M in range(2,MM+1):
+#         L = M ** (q-1)
+#         transformed = original.degrade_static(L)
+#         print( transformed.calcOutputAlphabetSize(), transformed.conditionalEntropy() - originalEntropy )
+#
+#     print("* dynamic degrade")
+#
+#     MM = 27
+#     for M in range(2,MM+1):
+#         L = M ** (q-1)
+#         transformed = original.degrade(L)
+#         print( transformed.calcOutputAlphabetSize(), transformed.conditionalEntropy() - originalEntropy )
+#
+
+def qupgradeUniform():
+    q = 3
+    T = 400
+    MM = 20
+    original = QaryMemorylessDistribution.makeQuantizedUniform(q, T)
+    
+    originalEntropy = original.conditionalEntropy()
+    print("*",  originalEntropy)
+
+    print("* upper bound on difference, equation (13) in Ordentlich and Tal")
+    for L in range(10,730,20):
+        print(L, QaryMemorylessDistribution.upgrade_dynamic_upper_bound(q, L))
+
+    print("* lower bound on upgrading cost, equation (43) in Kartowsky and Tal")
+    for L in range(10,730,20):
+        print(L, QaryMemorylessDistribution.upgrade_cost_lower_bound(q, L))
+
+    print("* static upgrade")
+    for M in range(2,MM+1):
+        L = M ** (q-1)
+        transformed = original.upgrade_static(L)
+        print( transformed.calcOutputAlphabetSize(), originalEntropy-transformed.conditionalEntropy() )
+
+    print("* dynamic upgrade")
+
+    MM = 27
+    for M in range(2,MM+1):
+        L = M ** (q-1)
+        transformed = original.upgrade(L)
+        print( transformed.calcOutputAlphabetSize(), originalEntropy-transformed.conditionalEntropy() )
+
+def qdegradeUniform():
+    q = 3
+    T = 400
+    MM = 20
+    original = QaryMemorylessDistribution.makeQuantizedUniform(q, T)
+    
+    originalEntropy = original.conditionalEntropy()
+    print("*",  originalEntropy)
+
+    print("* upper bound on difference, equation (27) in Ordentlich and Tal")
+    for L in range(10,730,20):
+        print(L, QaryMemorylessDistribution.degrade_dynamic_upper_bound(q, L))
+
+    print("* lower bound on degrading cost, equation (3) in Tal, On the Construction of Polar Codes for Channelswith Moderate Input Alphabet Sizes")
+    for L in range(10,730,20):
+        print(L, QaryMemorylessDistribution.degrade_cost_lower_bound(q, L))
+
+    # Strange! There is not a big difference!
+    print("* static degrade")
+    for M in range(2,MM+1):
+        L = M ** (q-1)
+        transformed = original.degrade_static(L)
+        print( transformed.calcOutputAlphabetSize(), transformed.conditionalEntropy()-originalEntropy )
+
+    print("* dynamic degrade")
+
+    MM = 27
+    for M in range(2,MM+1):
+        L = M ** (q-1)
+        transformed = original.degrade(L)
+        print( transformed.calcOutputAlphabetSize(), transformed.conditionalEntropy()-originalEntropy )
 
 
 
@@ -362,11 +488,14 @@ def qupgradeUniform():
 # bupgrade()
 # qdegrade()
 # qdegrade_static()
-# qupgrade()
 # qupgrade_static()
+# qupgrade()
 # qdegradeSimple()
-qupgradeSimple()
+# qupgradeSimple()
 # qupgradeUniform()
-# qupgradeInputDistribution()
-# qupgradeInputDistribution_static()
+# qdegradeUniform()
+qupgradeInputDistribution()
+qupgradeInputDistribution_static()
 # cProfile.run('qupgrade()')
+# qupgradeMultivariateNormal()
+# qdegradeMultivariateNormal()

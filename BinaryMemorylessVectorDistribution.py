@@ -1,38 +1,41 @@
 import numpy as np
+import VectorDistribution
 
-class BinaryMemorylessVectorDistribution(VectorDistribution):
+class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
     
     def __init__(self, length):
         assert( length > 0 )
-        self.probs = np.empty(length, 2) # so, probs[i][x] equals the probability of x transmitted or received at time i
-        self.probs[:] = NaN
+        self.probs = np.empty((length, 2)) # so, probs[i][x] equals the probability of x transmitted or received at time i
+        self.probs[:] = np.nan
         self.length = length
 
     def minusTransform(self):
-        assert( length % 2 == 0 )
+        assert( self.length % 2 == 0 )
         halfLength = self.length // 2
 
         newVector = BinaryMemorylessVectorDistribution(halfLength)
 
         for halfi in range(halfLength):
-            newVector.probs[halfi][0] = self.probs[2*i][0] * self.probs[2*i+1][0] + self.probs[2*i][1] * self.probs[2*i+1][1]
-            newVector.probs[halfi][1] = self.probs[2*i][0] * self.probs[2*i+1][1] + self.probs[2*i][1] * self.probs[2*i+1][0]
+            i = 2 * halfi
+            newVector.probs[halfi][0] = self.probs[i][0] * self.probs[i+1][0] + self.probs[i][1] * self.probs[i+1][1]
+            newVector.probs[halfi][1] = self.probs[i][0] * self.probs[i+1][1] + self.probs[i][1] * self.probs[i+1][0]
 
         return newVector
 
     def plusTransform(self, uminusDecisions):
-        assert( length % 2 == 0 )
+        assert( self.length % 2 == 0 )
         halfLength = self.length // 2
 
         newVector = BinaryMemorylessVectorDistribution(halfLength)
 
         for halfi in range(halfLength):
+            i = 2 * halfi
             if uminusDecisions[halfi] == 0:
-                newVector.probs[halfi][0] = self.probs[2*i][0] * self.probs[2*i+1][0] 
-                newVector.probs[halfi][1] = self.probs[2*i][1] * self.probs[2*i+1][1]
+                newVector.probs[halfi][0] = self.probs[i][0] * self.probs[i+1][0] 
+                newVector.probs[halfi][1] = self.probs[i][1] * self.probs[i+1][1]
             else:
-                newVector.probs[halfi][0] = self.probs[2*i][1] * self.probs[2*i+1][0] 
-                newVector.probs[halfi][1] = self.probs[2*i][0] * self.probs[2*i+1][1]
+                newVector.probs[halfi][0] = self.probs[i][1] * self.probs[i+1][0] 
+                newVector.probs[halfi][1] = self.probs[i][0] * self.probs[i+1][1]
 
         return newVector
 
@@ -42,8 +45,8 @@ class BinaryMemorylessVectorDistribution(VectorDistribution):
     def calcMarginalizedProbabilities(self):
         assert( len(self) == 1 )
 
-        marginalizedProbs = np.empty(length, 2)
-        self.probs[:] = NaN
+        marginalizedProbs = np.empty(2)
+        marginalizedProbs[:] = np.nan
 
         s = 0.0
         for x in range(2):
@@ -71,7 +74,4 @@ class BinaryMemorylessVectorDistribution(VectorDistribution):
 
             for x in range(2):
                 probs[i][x] /= t
-
-    
-        
 

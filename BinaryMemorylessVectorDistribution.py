@@ -19,6 +19,7 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
             i = 2 * halfi
             newVector.probs[halfi][0] = self.probs[i][0] * self.probs[i+1][0] + self.probs[i][1] * self.probs[i+1][1]
             newVector.probs[halfi][1] = self.probs[i][0] * self.probs[i+1][1] + self.probs[i][1] * self.probs[i+1][0]
+            # print(newVector.probs[halfi][0], newVector.probs[halfi][1]) 
 
         return newVector
 
@@ -36,6 +37,7 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
             else:
                 newVector.probs[halfi][0] = self.probs[i][1] * self.probs[i+1][0] 
                 newVector.probs[halfi][1] = self.probs[i][0] * self.probs[i+1][1]
+            # print(newVector.probs[halfi][0], newVector.probs[halfi][1]) 
 
         return newVector
 
@@ -58,20 +60,20 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
         return marginalizedProbs
 
     def calcNormalizationVector(self):
-        normalization = np.zeros(length)
+        normalization = np.zeros(self.length)
 
         for i in range(self.length):
-            normalization[i] = np.maximum( probs[i] )
+            normalization[i] = np.maximum( self.probs[i][0], self.probs[i][1] )
 
         return normalization
 
     def normalize(self, normalization):
         for i in range(self.length):
-            t = normalization[y]
+            t = normalization[i]
             assert( t >= 0 )
             if t == 0:
                 t = 1
 
             for x in range(2):
-                probs[i][x] /= t
+                self.probs[i][x] /= t
 

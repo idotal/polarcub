@@ -64,22 +64,29 @@ class PolarEncoderDecoder():
                 return (encodedVector, next_uIndex, next_informationVectorIndex)
             else:
                 marginalizedVector = vectorDistribution.calcMarginalizedProbabilities()
+                print( marginalizedVector[0] )
                 if marginalizedVector[0] >= randomlyGeneratedNumbers[uIndex]:
                     encodedVector[0] = 0
                 else:
                     encodedVector[0] = 1
+
                 next_uIndex = uIndex + 1
                 next_informationVectorIndex = informationVectorIndex
                 return (encodedVector, next_uIndex, next_informationVectorIndex)
         else:
             minusVectorDistribution = vectorDistribution.minusTransform()
+            normalization = minusVectorDistribution.calcNormalizationVector()
+            minusVectorDistribution.normalize(normalization)
 
             (minusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(minusVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers)
+
             plusVectorDistribution = vectorDistribution.plusTransform(minusEncodedVector)
+            normalization = plusVectorDistribution.calcNormalizationVector()
+            plusVectorDistribution.normalize(normalization)
 
             uIndex = next_uIndex
             informationVectorIndex = next_informationVectorIndex
-            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(minusVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers)
+            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(plusVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers)
 
             halfLength = len(vectorDistribution) // 2
 

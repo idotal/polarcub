@@ -4,7 +4,7 @@ import BinaryMemorylessVectorDistribution as bmvd
 import PolarEncoderDecoder as encdec
 
 def testEncode():
-    uLen = 4
+    uLen = 256
 
     vecDist = bmvd.BinaryMemorylessVectorDistribution(uLen)
     frozenSet = set()

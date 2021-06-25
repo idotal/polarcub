@@ -13,14 +13,17 @@ class PolarEncoderDecoder():
         self.length = length
         
         self.frozenOrInformation = np.empty(length, uIndexType)
+        self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
 
     def initializeFrozenOrInformationAndRandomlyGeneratedNumbers(self):
+        self.k = 0
         for i in range(self.length):
             if i in self.frozenSet:
                 self.frozenOrInformation[i] = uIndexType.frozen
             else:
                 self.frozenOrInformation[i] = uIndexType.information
+                self.k += 1
 
         self.randomlyGeneratedNumbers = np.empty(self.length)
         self.randomlyGeneratedNumbers[:] = np.nan
@@ -34,36 +37,57 @@ class PolarEncoderDecoder():
             for i in range(self.length):
                 self.randomlyGeneratedNumbers[i] = 1.0
 
-    def encode(self, vectorDistribution, information):
+    # returns encodedVector
+    def encode(self, xVectorDistribution, information):
         uIndex = 0
         informationVectorIndex = 0
-        assert( len(vectorDistribution) == self.length )
+        assert( len(xVectorDistribution) == self.length )
 
-        self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
-        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(vectorDistribution, information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers)
+        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(xVectorDistribution, information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers)
 
-        assert( next_uIndex == len(encodedVector) == len(vectorDistribution) )
+        assert( next_uIndex == len(encodedVector) == len(xVectorDistribution) )
         assert( next_informationVectorIndex == len(information) )
 
         return encodedVector
 
-    def decode(self, vectorDistribution):
-        pass # TODO
+    # returns (encodedVector, information)
+    def decode(self, xVectorDistribution, xyVectorDistriubiton):
+        uIndex = 0
+        informationVectorIndex = 0
+
+        information = np.empty(self.k, np.int64)
+        information[:] = -1
+
+        assert( len(xVectorDistribution) == len(xyVectorDistribution) == self.length )
+
+
+        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(xVectorDistribution, information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xyVectorDistribution)
+
+        assert( next_uIndex == len(encodedVector) == len(vectorDistribution) )
+        assert( next_informationVectorIndex == len(information) )
+
+        return (encodedVector, information)
 
     # returns (encodedVector, next_uIndex, next_informationVectorIndex)
-    def recursiveEncode(self, vectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers):
-        encodedVector = np.empty(len(vectorDistribution), np.int64)
+    def recursiveEncode(self, xVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xyVectorDistribution=None):
+        encodedVector = np.empty(len(xVectorDistribution), np.int64)
         encodedVector[:] = -1
 
-        if len(vectorDistribution) == 1:
+        if len(xVectorDistribution) == 1:
             if self.frozenOrInformation[uIndex] == uIndexType.information:
+
+                # For decoding
+                if xyVectorVectorDistribution != None:
+                    marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
+                    encodedVector[0] = 0 if marginalizedVector[0] >= marginalizedVector[1] else 1
+
                 encodedVector[0] = information[informationVectorIndex]
                 next_uIndex = uIndex + 1
                 next_informationVectorIndex = informationVectorIndex + 1
                 return (encodedVector, next_uIndex, next_informationVectorIndex)
             else:
-                marginalizedVector = vectorDistribution.calcMarginalizedProbabilities()
+                marginalizedVector = xVectorDistribution.calcMarginalizedProbabilities()
                 print( marginalizedVector[0] )
                 if marginalizedVector[0] >= randomlyGeneratedNumbers[uIndex]:
                     encodedVector[0] = 0
@@ -74,21 +98,37 @@ class PolarEncoderDecoder():
                 next_informationVectorIndex = informationVectorIndex
                 return (encodedVector, next_uIndex, next_informationVectorIndex)
         else:
-            minusVectorDistribution = vectorDistribution.minusTransform()
-            normalization = minusVectorDistribution.calcNormalizationVector()
-            minusVectorDistribution.normalize(normalization)
+            xMinusVectorDistribution = xVectorDistribution.minusTransform()
+            normalization = xMinusVectorDistribution.calcNormalizationVector()
+            xMinusVectorDistribution.normalize(normalization)
 
-            (minusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(minusVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers)
+            # For decoding
+            if xyVectorDistribution != None:
+                xyMinusVectorDistribution = xyVectorDistribution.minusTransform()
+                normalization = xyMinusVectorDistribution.calcNormalizationVector()
+                xyMinusVectorDistribution.normalize(normalization)
+            else:
+                xyMinusVectorDistribution = None
 
-            plusVectorDistribution = vectorDistribution.plusTransform(minusEncodedVector)
-            normalization = plusVectorDistribution.calcNormalizationVector()
-            plusVectorDistribution.normalize(normalization)
+            (minusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(xMinusVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xyMinusVectorDistribution)
+
+            xPlusVectorDistribution = xVectorDistribution.plusTransform(minusEncodedVector)
+            normalization = xPlusVectorDistribution.calcNormalizationVector()
+            xPlusVectorDistribution.normalize(normalization)
+
+            # For decoding
+            if xyVectorDistribution != None:
+                xyPlusVectorDistribution = xyVectorDistribution.plusTransform(minusEncodedVector)
+                normalization = xyPlusVectorDistribution.calcNormalizationVector()
+                xyPlusVectorDistribution.normalize(normalization)
+            else:
+                xyPlusVectorDistribution = None
 
             uIndex = next_uIndex
             informationVectorIndex = next_informationVectorIndex
-            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(plusVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers)
+            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncode(xPlusVectorDistribution, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xyPlusVectorDistribution)
 
-            halfLength = len(vectorDistribution) // 2
+            halfLength = len(xVectorDistribution) // 2
 
             for halfi in range(halfLength):
                 encodedVector[2*halfi] = (minusEncodedVector[halfi] + plusEncodedVector[halfi]) % 2

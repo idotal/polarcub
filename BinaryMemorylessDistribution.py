@@ -207,6 +207,7 @@ class BinaryMemorylessDistribution:
         bmvd = BinaryMemorylessVectorDistribution.BinaryMemorylessVectorDistribution(length)
 
         if yvec is not None:
+            assert( len(yvec) == length )
             for i in range(length):
                 for x in range(2):
                     bmvd.probs[i][x] = self.probs[yvec[i]][x]

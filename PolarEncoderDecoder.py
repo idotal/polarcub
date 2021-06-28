@@ -63,7 +63,7 @@ class PolarEncoderDecoder():
         return encodedVector
 
     # returns (encodedVector, information)
-    def decode(self, xVectorDistribution, xyVectorDistriubiton):
+    def decode(self, xVectorDistribution, xyVectorDistribution):
         """Decode k information bits according to a-priori input distribution and a-posteriori input distribution
 
         Args:
@@ -86,7 +86,7 @@ class PolarEncoderDecoder():
 
         (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution)
 
-        assert( next_uIndex == len(encodedVector) == len(vectorDistribution) )
+        assert( next_uIndex == len(encodedVector) == self.length )
         assert( next_informationVectorIndex == len(information) )
 
         return (encodedVector, information)
@@ -120,7 +120,7 @@ class PolarEncoderDecoder():
             if self.frozenOrInformation[uIndex] == uIndexType.information:
 
                 # For decoding
-                if xyVectorVectorDistribution != None:
+                if xyVectorDistribution is not None:
                     marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
                     encodedVector[0] = 0 if marginalizedVector[0] >= marginalizedVector[1] else 1
 

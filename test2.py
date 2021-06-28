@@ -123,15 +123,15 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
             probSum = 0.0
 
             for y in range(len(xyDistribution.probs)):
-                if probSum + xyDistribution.probXGivenY(x,y) <= rand:
+                if probSum + xyDistribution.probXGivenY(x,y) >= rand:
                     receivedWord.append(y)
                     break
                 else:
                     probSum += xyDistribution.probXGivenY(x,y)
 
-        xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(lenth, receivedWord )
+        xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
 
-        decodedVector, decodedInformation = encDec.decode(xVectorDistribution, xyVectorDistriubiton)
+        decodedVector, decodedInformation = encDec.decode(xVectorDistribution, xyVectorDistribution)
         for i in range( encDec.k ):
             if information[i] != decodedInformation[i]:
                 misdecodedWords += 1

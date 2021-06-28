@@ -203,17 +203,17 @@ class BinaryMemorylessDistribution:
 
         self.normalize() # for good measure
 
-    def makeBinaryMemorylessVectorDistribution(length, yvec):
-        bmvd = BinaryMemorylessVectorDistribution(length)
+    def makeBinaryMemorylessVectorDistribution(self, length, yvec):
+        bmvd = BinaryMemorylessVectorDistribution.BinaryMemorylessVectorDistribution(length)
 
         if yvec is not None:
             for i in range(length):
                 for x in range(2):
-                    bmvd.probs[i][x] = probs[yvec[i]][x]
+                    bmvd.probs[i][x] = self.probs[yvec[i]][x]
         else:
             for i in range(length):
                 for x in range(2):
-                    bmvd.probs[i][x] = probs[0][x]
+                    bmvd.probs[i][x] = self.probs[0][x]
 
         return bmvd
 

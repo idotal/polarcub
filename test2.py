@@ -2,7 +2,8 @@
 
 import BinaryMemorylessDistribution
 import BinaryMemorylessVectorDistribution as bmvd
-import PolarEncoderDecoder as encdec
+import PolarEncoderDecoder
+import random
 
 def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution):
     """Calculate the frozen set by degrading and upgrading the a-priori and joint distributions, respectively
@@ -94,11 +95,15 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
     rngSeed = 0
     misdecodedWords = 0
 
-    xDistribution = BinaryMemorylessDistribution(1)
+    xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
+
+    xDistribution.probs.append( [-1.0,-1.0] )
+    for x in range(2):
+        xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
 
     xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
 
-    encDec = PolarEncoderDecoder(length, frozenSet, rngSeed)
+    encDec = PolarEncoderDecoder.PolarEncoderDecoder(length, frozenSet, rngSeed)
 
     random.seed(1)
 

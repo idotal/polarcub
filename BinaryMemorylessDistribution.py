@@ -2,6 +2,8 @@ import math
 import sys
 import LinkedListHeap
 import itertools
+import BinaryMemorylessVectorDistribution
+
 # from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
 # from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
 #
@@ -201,6 +203,20 @@ class BinaryMemorylessDistribution:
 
         self.normalize() # for good measure
 
+    def makeBinaryMemorylessVectorDistribution(length, yvec):
+        bmvd = BinaryMemorylessVectorDistribution(length)
+
+        if yvec is not None:
+            for i in range(length):
+                for x in range(2):
+                    bmvd.probs[i][x] = probs[yvec[i]][x]
+        else:
+            for i in range(length):
+                for x in range(2):
+                    bmvd.probs[i][x] = probs[0][x]
+
+        return bmvd
+
     # polar transforms
     def minusTransform(self):
         
@@ -375,6 +391,15 @@ class BinaryMemorylessDistribution:
     def calcYMarginal(self, y):
         """calculate the marginal p(Y = y)"""
         return sum(self.probs[y])
+
+    def calcXMarginal(self, x):
+        """calculate the marginal p(X = x)"""
+        sumProbs = 0.0
+
+        for y in range( len(self.probs)):
+            sumProbs += self.probs[y][x]
+
+        return sumProbs
 
 # functions for degrade/upgrade/merge
 if use_fast == True:

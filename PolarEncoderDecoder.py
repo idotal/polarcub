@@ -122,7 +122,7 @@ class PolarEncoderDecoder():
                 # For decoding
                 if xyVectorDistribution is not None:
                     marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
-                    encodedVector[0] = 0 if marginalizedVector[0] >= marginalizedVector[1] else 1
+                    information[informationVectorIndex] = 0 if marginalizedVector[0] >= marginalizedVector[1] else 1
 
                 encodedVector[0] = information[informationVectorIndex]
                 next_uIndex = uIndex + 1
@@ -130,7 +130,6 @@ class PolarEncoderDecoder():
                 return (encodedVector, next_uIndex, next_informationVectorIndex)
             else:
                 marginalizedVector = xVectorDistribution.calcMarginalizedProbabilities()
-                print( marginalizedVector[0] )
                 if marginalizedVector[0] >= randomlyGeneratedNumbers[uIndex]:
                     encodedVector[0] = 0
                 else:

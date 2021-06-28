@@ -131,7 +131,8 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 
         xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
 
-        decodedVector, decodedInformation = encDec.decode(xVectorDistribution, xyVectorDistribution)
+        (decodedVector, decodedInformation) = encDec.decode(xVectorDistribution, xyVectorDistribution)
+
         for i in range( encDec.k ):
             if information[i] != decodedInformation[i]:
                 misdecodedWords += 1
@@ -143,18 +144,18 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 
 p = 0.11
 L = 100
-n = 5
+n = 6
 N = 2 ** n
-upperBoundOnErrorProbability = 0.1
+upperBoundOnErrorProbability = 1.0
 
 xDistribution = None
 xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
 
 frozenSet = calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
 
-print(len(frozenSet) / N)
+print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
 
-numberOfTrials = 200
+numberOfTrials = 2000
 
 encodeDecodeSimulation(N, frozenSet, xyDistribution, numberOfTrials)
 

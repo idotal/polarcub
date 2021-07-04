@@ -32,16 +32,16 @@ class Vertex():
         return (self.stateId, self.verticalPosInLayer, self.layer)
 
     def toString(self, printEdges = True):
-        s = "The vertex has stateId = " + str(self.stateId) + ", has verticalPosInLayer = " + str(self.verticalPosInLayer) + ", resides in layer = " + str(self.layer) + "and has vertexProb = " + str(self.vertexProb) + "\n"
+        s = "The vertex has stateId = " + str(self.stateId) + ", has verticalPosInLayer = " + str(self.verticalPosInLayer) + ", resides in layer = " + str(self.layer) + ", and has vertexProb = " + str(self.vertexProb) + "\n"
 
         if printEdges == True:
             s += "The number of incoming edges is " + str(len(self.incomingEdges)) + ", these are:\n"
-            for edge in self.incomingEdges:
-                s += toString(edge, printFromVertex = True, printToVertex = False)
+            for (edgeKey, edge) in self.incomingEdges.items():
+                s += edge.toString(printFromVertex = True, printToVertex = False)
     
             s += "The number of outgoing edges is " + str(len(self.outgoingEdges)) + ", these are:\n"
-            for edge in self.outgoingEdges:
-                s += toString(edge, printFromVertex = False, printToVertex = True)
+            for (edgeKey, edge) in self.outgoingEdges.items():
+                s += edge.toString(printFromVertex = False, printToVertex = True)
 
         return s
 
@@ -77,6 +77,8 @@ class Edge():
             s += "The edge enters the following vertex:\n"
             s += self.toVertex.toString(printEdges=False)
 
+        return s
+
     def __str__(self):
         return self.toString()
         
@@ -106,10 +108,10 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
     def addToEdgeProb(self, fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel, probToAdd):
         fromVertex = self.__getVertexAndAddIfNeeded(fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer)
         toVertex =  self.__getVertexAndAddIfNeeded(toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer)
-        addToEdgeProb_vertexReferences(self, fromVertex, toVertex, edgeLabel, probToAdd)
+        self.addToEdgeProb_vertexReferences(fromVertex, toVertex, edgeLabel, probToAdd)
 
     def addToEdgeProb_vertexReferences(self, fromVertex, toVertex, edgeLabel, probToAdd):
-        edge = self.__getEdgeAndAddInNeeded(fromVertex, toVertex, edgeLabel)
+        edge = self.__getEdgeAndAddIfNeeded(fromVertex, toVertex, edgeLabel)
         edge.edgeProb += probToAdd
 
     def getEdgeProb(self, fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel):
@@ -129,22 +131,22 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         return edge.edgeProb
 
     def __getVertexAndAddIfNeeded(self, stateId, verticalPosInLayer, layer):
-        possibleNewVertex = Vertex(stateId, verticalPosInLayer, layer, vertexProb)
+        possibleNewVertex = Vertex(stateId, verticalPosInLayer, layer)
         vertexKey = possibleNewVertex.getKey()
 
         if vertexKey not in self.verticesInLayer[layer]:
-            self.verticesInLayer[layer].add(vertexKey, possibleNewVertex)
+            self.verticesInLayer[layer][vertexKey] = possibleNewVertex
 
         return self.verticesInLayer[layer][vertexKey]
 
-    def __getEdgeAndAddIfNeeded(self, fromVertex, toVertex, edgeLable, edgeProb = 0.0):
+    def __getEdgeAndAddIfNeeded(self, fromVertex, toVertex, edgeLabel, edgeProb = 0.0):
         possibleNewEdge = Edge(fromVertex, toVertex, edgeLabel, edgeProb)
         edgeKey = possibleNewEdge.getKey()
 
         if edgeKey not in fromVertex.outgoingEdges:
-            assert(edgeKey not in toVertex.incominEdges)
-            fromVertex.outgoingEdges.add(edgeKey, possibleNewEdge)
-            toVertex.incomingEdges.add(edgeKey, possibleNewEdge)
+            assert(edgeKey not in toVertex.incomingEdges)
+            fromVertex.outgoingEdges[edgeKey] = possibleNewEdge
+            toVertex.incomingEdges[edgeKey] = possibleNewEdge
 
         assert(fromVertex.outgoingEdges[edgeKey] is toVertex.incomingEdges[edgeKey])
 
@@ -165,7 +167,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         for l in range(self.layers):
             s += "For layer " + str(l) + ", these vertices are:\n"
 
-            for vertex in self.verticesInLayer[l]:
+            for (vertexKey, vertex) in self.verticesInLayer[l].items():
                 s += vertex.toString(printEdges=True) + "\n"
 
         return s

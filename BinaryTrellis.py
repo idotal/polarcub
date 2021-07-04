@@ -67,7 +67,7 @@ class Edge():
         return (self.fromVertex.stateId, self.fromVertex.verticalPosInLayer, self.fromVertex.layer, self.toVertex.stateId, self.toVertex.verticalPosInLayer, self.edgeLabel)
 
     def toString(self, printFromVertex = False, printToVertex = False):
-        s = "The edge has label = " + str(self.edgeLabel) " and edgeProb = " + str(self.edgeProb) + "\n"
+        s = "The edge has label = " + str(self.edgeLabel) + " and edgeProb = " + str(self.edgeProb) + "\n"
 
         if printFromVertex == True:
             s += "The edge leaves the following vertex:\n"
@@ -96,7 +96,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         self.verticesInLayer = [] # vericesInLayer[layer] is a dictionary accessed by vertexKey. So, vericesInLayer[layer][vertexKey].
 
         for l in range(self.layers):
-            self.verticesInLayer.add( {} )
+            self.verticesInLayer.append( {} )
 
     def setVertexProb(self, vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb):
         vertexKey = Vertex(vertex_stateId, vertex_verticalPosInLayer, vertex_layer).getKey()
@@ -118,7 +118,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
 
         fromVertex = self.verticesInLayer[fromVertex_layer][fromVertex_key]
         toVertex = self.verticesInLayer[toVertex_layer][toVertex_key]
-        return self.getEdgeProb_vertexReferences(fromVertex, toVertex, edgeLabel):
+        return self.getEdgeProb_vertexReferences(fromVertex, toVertex, edgeLabel)
 
     def getEdgeProb_vertexReferences(self, fromVertex, toVertex, edgeLabel):
         edgeKey = Edge(fromVertex, toVertex, edgeLabel).getKey()
@@ -132,7 +132,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         possibleNewVertex = Vertex(stateId, verticalPosInLayer, layer, vertexProb)
         vertexKey = possibleNewVertex.getKey()
 
-        if vertexKey not in self.verticesInLayer[layer]):
+        if vertexKey not in self.verticesInLayer[layer]:
             self.verticesInLayer[layer].add(vertexKey, possibleNewVertex)
 
         return self.verticesInLayer[layer][vertexKey]
@@ -156,14 +156,14 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         s += "The number of vertices in each layers is: \n"
 
         for l in range(self.layers):
-            s += len(self.verticesInLayer)
+            s += str(len(self.verticesInLayer[l]))
             if l < self.layers - 1:
                 s += ", "
             else:
                 s += "\n"
         
         for l in range(self.layers):
-            s += "For layer" + str(l) + ", these vertices are:\n"
+            s += "For layer " + str(l) + ", these vertices are:\n"
 
             for vertex in self.verticesInLayer[l]:
                 s += vertex.toString(printEdges=True) + "\n"

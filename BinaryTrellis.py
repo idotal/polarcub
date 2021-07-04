@@ -32,16 +32,16 @@ class Vertex():
         return (self.stateId, self.verticalPosInLayer, self.layer)
 
     def toString(self, printEdges = True):
-        s = "The vertex has stateId = " + str(self.stateId) + ", has verticalPosInLayer = " + str(self.verticalPosInLayer) + ", resides in layer = " + str(self.layer) + ", and has vertexProb = " + str(self.vertexProb) + "\n"
+        s = "* " + str(self.getKey()) + ": stateId = " + str(self.stateId) + ", verticalPosInLayer = " + str(self.verticalPosInLayer) + ", layer = " + str(self.layer) + ", vertexProb = " + str(self.vertexProb) + "\n"
 
         if printEdges == True:
-            s += "The number of incoming edges is " + str(len(self.incomingEdges)) + ", these are:\n"
+            s += "  incoming edges (" + str(len(self.incomingEdges)) + "):\n"
             for (edgeKey, edge) in self.incomingEdges.items():
-                s += edge.toString(printFromVertex = True, printToVertex = False)
+                s += "    " + edge.toString() + "\n"
     
-            s += "The number of outgoing edges is " + str(len(self.outgoingEdges)) + ", these are:\n"
+            s += "  outgoing edges (" + str(len(self.outgoingEdges)) + "):\n"
             for (edgeKey, edge) in self.outgoingEdges.items():
-                s += edge.toString(printFromVertex = False, printToVertex = True)
+                s += "    " + edge.toString() + "\n"
 
         return s
 
@@ -66,18 +66,26 @@ class Edge():
         self.sanityCheck()
         return (self.fromVertex.stateId, self.fromVertex.verticalPosInLayer, self.fromVertex.layer, self.toVertex.stateId, self.toVertex.verticalPosInLayer, self.edgeLabel)
 
-    def toString(self, printFromVertex = False, printToVertex = False):
-        s = "The edge has label = " + str(self.edgeLabel) + " and edgeProb = " + str(self.edgeProb) + "\n"
+    def toString(self):
+        s = str(self.fromVertex.getKey())
 
-        if printFromVertex == True:
-            s += "The edge leaves the following vertex:\n"
-            s += self.fromVertex.toString(printEdges=False)
+        s += " --[l=" + str(self.edgeLabel) + ",p=" + str(self.edgeProb) + "]--> "
 
-        if printToVertex == True:
-            s += "The edge enters the following vertex:\n"
-            s += self.toVertex.toString(printEdges=False)
+        s += str(self.toVertex.getKey())
 
         return s
+
+        # s = "The edge has label = " + str(self.edgeLabel) + " and edgeProb = " + str(self.edgeProb) + "\n"
+        #
+        # if printFromVertex == True:
+        #     s += "The edge leaves the following vertex:\n"
+        #     s += self.fromVertex.toString(printEdges=False)
+        #
+        # if printToVertex == True:
+        #     s += "The edge enters the following vertex:\n"
+        #     s += self.toVertex.toString(printEdges=False)
+        #
+        # return s
 
     def __str__(self):
         return self.toString()

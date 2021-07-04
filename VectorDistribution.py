@@ -15,7 +15,7 @@ class VectorDistribution:
         assert(False)
 
 
-    # Valid only for len(self) = 1. Returns a vector of probabilities equal to 1, whose length is the output alphabet size. That is, we return P_X(x).
+    # Valid only for len(self) = 1. Returns a vector of probabilities summing to 1, whose length is the output alphabet size. That is, we return P_X(x).
     def calcMarginalizedProbabilities(self):
         assert(False)
 

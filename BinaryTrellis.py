@@ -69,7 +69,7 @@ class Edge():
     def toString(self):
         s = str(self.fromVertex.getKey())
 
-        s += " --[l=" + str(self.edgeLabel) + ",p=" + str(self.edgeProb) + "]--> "
+        s += " --[lbl=" + str(self.edgeLabel) + ",p=" + str(self.edgeProb) + "]--> "
 
         s += str(self.toVertex.getKey())
 
@@ -179,22 +179,50 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
 
         return s
 
-def buildTrellis_uniformInput_noGuardBands(receivedWord, codewordLength, p):
+def buildTrellis_uniformInput_deletion_noGuardBands(receivedWord, codewordLength, deletionProb):
     trellis = BinaryTrellis(codewordLength)
+    deletionCount = codewordLength - len(receivedWord)
+    inputProb = [0.5, 0.5]
 
     vertex_stateId = 0
     vertex_verticalPosInLayer = 0
     vertex_layer = 0
     vertexProb = 1.0
 
+
     trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
 
-    vertex_verticalPosInLayer = codewordLength - len(receivedWord)
+    vertex_verticalPosInLayer = len(receivedWord) 
     vertex_layer = codewordLength
 
     trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
 
+    for l in range(codewordLength):
+        vpos_min = max(0, l - deletionCount)
+        vpos_max = min(l, len(receivedWord))
 
-    # TODO: stopped here
+        for vpos in range(vpos_min, vpos_max+1):
+            if vpos < len(receivedWord): # then we can have a non-deletion event
+                fromVertex_stateId = 0
+                fromVertex_verticalPosInLayer = vpos
+                fromVertex_layer = l
+                toVertex_stateId = 0
+                toVertex_verticalPosInLayer = vpos+1 # a non-deletion
+                toVertex_layer = l+1
+                edgeLabel = receivedWord[vpos]
+                probToAdd = inputProb[edgeLabel] * (1.0 - deletionProb)
+
+                trellis.addToEdgeProb(fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel, probToAdd)
+            if l - vpos < deletionCount: # then we can have a deletion event
+                for edgeLabel in range(2):
+                    fromVertex_stateId = 0
+                    fromVertex_verticalPosInLayer = vpos
+                    fromVertex_layer = l
+                    toVertex_stateId = 0
+                    toVertex_verticalPosInLayer = vpos # a deletion
+                    toVertex_layer = l+1
+                    probToAdd = inputProb[edgeLabel] * deletionProb
+                    
+                    trellis.addToEdgeProb(fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel, probToAdd)
 
     return trellis

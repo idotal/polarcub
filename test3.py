@@ -41,9 +41,12 @@ def temp():
     print(bt)
 
 codeword = [1,0,1,1,1,0]
-p = 0.9
+p = 0.3
 seed = 0
 
 receivedWord = deletionChannelSimulation(codeword, p, seed)
+trellis = BinaryTrellis.buildTrellis_uniformInput_noGuardBands(receivedWord, len(codeword), p)
+
 print(codeword)
 print(receivedWord)
+print(trellis)

@@ -109,8 +109,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
             self.verticesInLayer.append( {} )
 
     def setVertexProb(self, vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb):
-        vertexKey = Vertex(vertex_stateId, vertex_verticalPosInLayer, vertex_layer).getKey()
-        vertex = self.verticesInLayer[vertex_layer][vertexKey]
+        vertex = self.__getVertexAndAddIfNeeded(vertex_stateId, vertex_verticalPosInLayer, vertex_layer)
         vertex.vertexProb = vertexProb
 
     def addToEdgeProb(self, fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel, probToAdd):
@@ -179,3 +178,23 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
                 s += vertex.toString(printEdges=True) + "\n"
 
         return s
+
+def buildTrellis_uniformInput_noGuardBands(receivedWord, codewordLength, p):
+    trellis = BinaryTrellis(codewordLength)
+
+    vertex_stateId = 0
+    vertex_verticalPosInLayer = 0
+    vertex_layer = 0
+    vertexProb = 1.0
+
+    trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+
+    vertex_verticalPosInLayer = codewordLength - len(receivedWord)
+    vertex_layer = codewordLength
+
+    trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+
+
+    # TODO: stopped here
+
+    return trellis

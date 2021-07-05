@@ -3,7 +3,7 @@
 import BinaryTrellis
 import random
 
-def deletionChannelSimulation(codeword, p, seed):
+def deletionChannelSimulation(codeword, p, seed, trimmedZerosAtEdges=False):
     N = len(codeword)
     receivedWord = []
 
@@ -18,7 +18,35 @@ def deletionChannelSimulation(codeword, p, seed):
         else:
             receivedWord.append(codeword[i])
 
-    return receivedWord
+
+    if trimmedZerosAtEdges == True:
+        trimmedReceivedWord = []
+
+        firstOneIndex = -1
+
+        for i in range(len(receivedWord)):
+            if receivedWord[i] == 1:
+                firstOneIndex = i
+                break
+        
+        if firstOneIndex == -1:
+            return trimmedReceivedWord # which is empty
+
+        lastOneIndex = -1
+        for i in range(len(receivedWord)-1,-1,-1):
+            if receivedWord[i] == 1:
+                lastOneIndex = i
+                break
+
+        assert(lastOneIndex != -1)
+
+        for i in range(firstOneIndex, lastOneIndex+1):
+            trimmedReceivedWord.append(receivedWord[i])
+
+        return trimmedReceivedWord
+
+    else:
+        return receivedWord
 
 def temp():
     bt = BinaryTrellis.BinaryTrellis(2)
@@ -40,12 +68,13 @@ def temp():
     
     print(bt)
 
-codeword = [1,0,1,1,1,0]
-deletionProb = 0.3
+codeword = [0,0,1,0,1]
+deletionProb = 0.01
 seed = 0
+trimmedZerosAtEdges=True
 
-receivedWord = deletionChannelSimulation(codeword, deletionProb, seed)
-trellis = BinaryTrellis.buildTrellis_uniformInput_deletion_noGuardBands(receivedWord, len(codeword), deletionProb)
+receivedWord = deletionChannelSimulation(codeword, deletionProb, seed, trimmedZerosAtEdges)
+trellis = BinaryTrellis.buildTrellis_uniformInput_deletion(receivedWord, len(codeword), deletionProb, trimmedZerosAtEdges)
 
 print(codeword)
 print(receivedWord)

@@ -179,7 +179,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
 
         return s
 
-def buildTrellis_uniformInput_deletion_noGuardBands(receivedWord, codewordLength, deletionProb):
+def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionProb, trimmedZerosAtEdges=False):
     trellis = BinaryTrellis(codewordLength)
     deletionCount = codewordLength - len(receivedWord)
     inputProb = [0.5, 0.5]
@@ -196,6 +196,9 @@ def buildTrellis_uniformInput_deletion_noGuardBands(receivedWord, codewordLength
     vertex_layer = codewordLength
 
     trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+
+    if trimmedZerosAtEdges == True:
+        assert( len(receivedWord) == 0 or (receivedWord[0] == 1 and receivedWord[-1] == 1))
 
     for l in range(codewordLength):
         vpos_min = max(0, l - deletionCount)
@@ -221,7 +224,11 @@ def buildTrellis_uniformInput_deletion_noGuardBands(receivedWord, codewordLength
                     toVertex_stateId = 0
                     toVertex_verticalPosInLayer = vpos # a deletion
                     toVertex_layer = l+1
-                    probToAdd = inputProb[edgeLabel] * deletionProb
+
+                    if trimmedZerosAtEdges == False or edgeLabel == 1 or (vpos > 0 and vpos < len(receivedWord)):
+                        probToAdd = inputProb[edgeLabel] * deletionProb
+                    else:
+                        probToAdd = inputProb[edgeLabel] 
                     
                     trellis.addToEdgeProb(fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel, probToAdd)
 

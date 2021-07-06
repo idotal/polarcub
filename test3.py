@@ -48,21 +48,21 @@ def temp():
     
     print(bt)
 
-codeword = [0,0,1,0,1,1,0,0]
+codeword = [0,0,1,0]
 
 xi = 0.1
-n = 3
-n0 = 3
+n = 2
+n0 = 2
 
 withGuardBand = Guardbands.addDeletionGuardBands(codeword, n, n0, xi)
 
-print(codeword)
-print(withGuardBand)
-print(Guardbands.removeDeletionGuardBands(withGuardBand, n, n0))
+# print(codeword)
+# print(withGuardBand)
+# print(Guardbands.removeDeletionGuardBands(withGuardBand, n, n0))
 
 deletionProb = 0.01
 seed = 0
-trimmedZerosAtEdges=True
+trimmedZerosAtEdges=False
 
 receivedWord = deletionChannelSimulation(codeword, deletionProb, seed, trimmedZerosAtEdges)
 trellis = BinaryTrellis.buildTrellis_uniformInput_deletion(receivedWord, len(codeword), deletionProb, trimmedZerosAtEdges)
@@ -71,3 +71,4 @@ print(codeword)
 print(receivedWord)
 print(trellis)
 print(trellis.minusTransform())
+print(trellis.plusTransform([0,1]))

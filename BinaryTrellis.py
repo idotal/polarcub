@@ -194,6 +194,9 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
 
         newTrellis = BinaryTrellis(self.length//2)
 
+        if decisionVector != None:
+            assert(len(decisionVector) == self.length//2)
+
         # Copy vertices at start and end
         for (vkey, v) in self.verticesInLayer[0].items():
             newTrellis.setVertexProb( v.stateId, v.verticalPosInLayer, 0, v.vertexProb)

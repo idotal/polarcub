@@ -71,11 +71,14 @@ def temp():
 codeword = [0,0,1,0,1,0,1,1]
 
 xi = 0.1
+n = 3
+n0 = 1
 
-withGuardBand = BinaryTrellis.addDeletionGuardBands(codeword, 3, 1, xi)
+withGuardBand = BinaryTrellis.addDeletionGuardBands(codeword, n, n0, xi)
 
 print(codeword)
 print(withGuardBand)
+print(BinaryTrellis.removeDeletionGuardBands(withGuardBand, n, n0))
 
 # deletionProb = 0.01
 # seed = 0

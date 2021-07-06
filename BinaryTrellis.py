@@ -263,4 +263,44 @@ def addDeletionGuardBands(codeword, n, n0, xi):
         return allTogether
 
 
-    
+def removeDeletionGuardBands(receivedWord, n, n0):
+    """Undo the addition of guard bands (plus trim), and return a list of the resulting substrings."""
+
+    trimmedReceivedWord = trimZerosAtEdges(receivedWord)
+
+    if n <= n0:
+        return [trimmedReceivedWord]
+    else:
+        leftHalfOfTrimmedReceivedWord = trimmedReceivedWord[0:len(trimmedReceivedWord)//2]
+        rightHalfOfTrimmedReceivedWord = trimmedReceivedWord[len(trimmedReceivedWord)//2:len(trimmedReceivedWord)]
+
+        leftList = removeDeletionGuardBands(leftHalfOfTrimmedReceivedWord, n-1, n0)
+        rightList = removeDeletionGuardBands(rightHalfOfTrimmedReceivedWord,n-1,n0)
+
+        return leftList + rightList
+
+def trimZerosAtEdges(receivedWord):
+        trimmedReceivedWord = []
+
+        firstOneIndex = -1
+
+        for i in range(len(receivedWord)):
+            if receivedWord[i] == 1:
+                firstOneIndex = i
+                break
+        
+        if firstOneIndex == -1:
+            return trimmedReceivedWord # which is empty
+
+        lastOneIndex = -1
+        for i in range(len(receivedWord)-1,-1,-1):
+            if receivedWord[i] == 1:
+                lastOneIndex = i
+                break
+
+        assert(lastOneIndex != -1)
+
+        for i in range(firstOneIndex, lastOneIndex+1):
+            trimmedReceivedWord.append(receivedWord[i])
+
+        return trimmedReceivedWord

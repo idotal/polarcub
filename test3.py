@@ -2,6 +2,7 @@
 
 import BinaryTrellis
 import random
+import Guardbands
 
 def deletionChannelSimulation(codeword, p, seed, trimmedZerosAtEdges=False):
     N = len(codeword)
@@ -20,28 +21,7 @@ def deletionChannelSimulation(codeword, p, seed, trimmedZerosAtEdges=False):
 
 
     if trimmedZerosAtEdges == True:
-        trimmedReceivedWord = []
-
-        firstOneIndex = -1
-
-        for i in range(len(receivedWord)):
-            if receivedWord[i] == 1:
-                firstOneIndex = i
-                break
-        
-        if firstOneIndex == -1:
-            return trimmedReceivedWord # which is empty
-
-        lastOneIndex = -1
-        for i in range(len(receivedWord)-1,-1,-1):
-            if receivedWord[i] == 1:
-                lastOneIndex = i
-                break
-
-        assert(lastOneIndex != -1)
-
-        for i in range(firstOneIndex, lastOneIndex+1):
-            trimmedReceivedWord.append(receivedWord[i])
+        trimmedReceivedWord = Guardbands.trimmedZerosAtEdges(receivedWord)
 
         return trimmedReceivedWord
 
@@ -68,17 +48,17 @@ def temp():
     
     print(bt)
 
-codeword = [0,0,1,0,1,0,1,1]
+codeword = [0,0,1,0,1,1,0,0]
 
 xi = 0.1
 n = 3
-n0 = 1
+n0 = 3
 
-withGuardBand = BinaryTrellis.addDeletionGuardBands(codeword, n, n0, xi)
+withGuardBand = Guardbands.addDeletionGuardBands(codeword, n, n0, xi)
 
 print(codeword)
 print(withGuardBand)
-print(BinaryTrellis.removeDeletionGuardBands(withGuardBand, n, n0))
+print(Guardbands.removeDeletionGuardBands(withGuardBand, n, n0))
 
 # deletionProb = 0.01
 # seed = 0

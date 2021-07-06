@@ -1,5 +1,6 @@
 import numpy as np
 import VectorDistribution
+import math
 
 class Vertex():
     def __init__(self, stateId = -1, verticalPosInLayer = -1, layer = -1, vertexProb = -1.0):
@@ -233,3 +234,33 @@ def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionPro
                     trellis.addToEdgeProb(fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel, probToAdd)
 
     return trellis
+
+def addDeletionGuardBands(codeword, n, n0, xi):
+    """Add deletion guard bands, according to equations (68) and (69) in the deletions paper"""
+
+    if n <= n0:
+        return codeword
+    else:
+        assert(len(codeword) % 2 == 0)
+
+        ln = math.floor(2**((1-xi)*(n-1)))
+
+        print( " codeword = ", codeword, " n = ", n, " ln =", ln )
+
+        leftPartOfCodeword = codeword[0:len(codeword)//2]
+        rightPartOfCodeword = codeword[len(codeword)//2:len(codeword)]
+
+        leftAfterGuardBandsAdded = addDeletionGuardBands(leftPartOfCodeword, n-1, n0, xi)
+        rightAfterGuardBandsAdded = addDeletionGuardBands(rightPartOfCodeword, n-1, n0, xi)
+
+        guardBand = []
+
+        for i in range(ln):
+            guardBand.append(0)
+
+        allTogether = leftAfterGuardBandsAdded + guardBand + rightAfterGuardBandsAdded
+
+        return allTogether
+
+
+    

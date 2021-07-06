@@ -21,7 +21,7 @@ def deletionChannelSimulation(codeword, p, seed, trimmedZerosAtEdges=False):
 
 
     if trimmedZerosAtEdges == True:
-        trimmedReceivedWord = Guardbands.trimmedZerosAtEdges(receivedWord)
+        trimmedReceivedWord = Guardbands.trimZerosAtEdges(receivedWord)
 
         return trimmedReceivedWord
 
@@ -60,13 +60,14 @@ print(codeword)
 print(withGuardBand)
 print(Guardbands.removeDeletionGuardBands(withGuardBand, n, n0))
 
-# deletionProb = 0.01
-# seed = 0
-# trimmedZerosAtEdges=True
-#
-# receivedWord = deletionChannelSimulation(codeword, deletionProb, seed, trimmedZerosAtEdges)
-# trellis = BinaryTrellis.buildTrellis_uniformInput_deletion(receivedWord, len(codeword), deletionProb, trimmedZerosAtEdges)
-#
-# print(codeword)
-# print(receivedWord)
-# print(trellis)
+deletionProb = 0.01
+seed = 0
+trimmedZerosAtEdges=True
+
+receivedWord = deletionChannelSimulation(codeword, deletionProb, seed, trimmedZerosAtEdges)
+trellis = BinaryTrellis.buildTrellis_uniformInput_deletion(receivedWord, len(codeword), deletionProb, trimmedZerosAtEdges)
+
+print(codeword)
+print(receivedWord)
+print(trellis)
+print(trellis.minusTransform())

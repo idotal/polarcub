@@ -108,6 +108,9 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         for l in range(self.layers):
             self.verticesInLayer.append( {} )
 
+    def __len__(self):
+        return self.length
+
     def setVertexProb(self, vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb):
         vertex = self.__getVertexAndAddIfNeeded(vertex_stateId, vertex_verticalPosInLayer, vertex_layer)
         vertex.vertexProb = vertexProb
@@ -178,6 +181,22 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
                 s += vertex.toString(printEdges=True) + "\n"
 
         return s
+
+    def minusTransform(self):
+        minusTrellis = BinaryTrellis(self.length//2)
+
+        # Copy vertices at start and end
+        for (vkey, v) in self.verticesInLayer[0].items():
+            minusTrellis.setVertexProb( v.stateId, v.verticalPosInLayer, 0, v.vertexProb)
+
+        for (vkey, v) in self.verticesInLayer[self.length].items():
+            minusTrellis.setVertexProb( v.stateId, v.verticalPosInLayer, self.length//2, v.vertexProb)
+
+        # Apply the transform
+        # TODO
+
+        return minusTrellis
+
 
 def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionProb, trimmedZerosAtEdges=False):
     trellis = BinaryTrellis(codewordLength)

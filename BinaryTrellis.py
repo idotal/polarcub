@@ -183,19 +183,55 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         return s
 
     def minusTransform(self):
-        minusTrellis = BinaryTrellis(self.length//2)
+        return self.__miusPlusTransform()
+
+    def plusTransform(self, decisionVector):
+        return self.__miusPlusTransform(decisionVector)
+
+    def __miusPlusTransform(self, decisionVector=None):
+        """If decisionVector = None, apply a minus transform, else apply a plus transform
+        """
+
+        newTrellis = BinaryTrellis(self.length//2)
 
         # Copy vertices at start and end
         for (vkey, v) in self.verticesInLayer[0].items():
-            minusTrellis.setVertexProb( v.stateId, v.verticalPosInLayer, 0, v.vertexProb)
+            newTrellis.setVertexProb( v.stateId, v.verticalPosInLayer, 0, v.vertexProb)
 
         for (vkey, v) in self.verticesInLayer[self.length].items():
-            minusTrellis.setVertexProb( v.stateId, v.verticalPosInLayer, self.length//2, v.vertexProb)
+            newTrellis.setVertexProb( v.stateId, v.verticalPosInLayer, self.length//2, v.vertexProb)
 
         # Apply the transform
-        # TODO
+        for middleVertexLayer_parentTrellis in range(1, self.layers, 2):
+            fromVertexLayer_parentTrellis = middleVertexLayer_parentTrellis - 1
+            toVertexLayer_parentTrellis = middleVertexLayer_parentTrellis + 1
 
-        return minusTrellis
+            for (middleVertexKey_parentTrellis, middleVertex_parentTrellis) in self.verticesInLayer[middleVertexLayer_parentTrellis].items():
+                for (incomingEdgeKey_middleVertex_parentTrellis, incomingEdge_middleVertex_parentTrellis) in middleVertex_parentTrellis.incomingEdges.items():
+                    for (outgoingEdgeKey_middleVertex_parentTrellis, outgoingEdge_middleVertex_parentTrellis) in middleVertex_parentTrellis.outgoingEdges.items():
+                        # u --(p0,x0)--> w --(p1,x1)--> v
+                        w = middleVertex_parentTrellis # For readabilty, not really used
+                        u = incomingEdge_middleVertex_parentTrellis.fromVertex
+                        v = outgoingEdge_middleVertex_parentTrellis.toVertex
+                        x0 = incomingEdge_middleVertex_parentTrellis.edgeLabel
+                        x1 = outgoingEdge_middleVertex_parentTrellis.edgeLabel
+                        p0 = incomingEdge_middleVertex_parentTrellis.edgeProb
+                        p1 = outgoingEdge_middleVertex_parentTrellis.edgeProb
+
+                        newEdgeProbToAdd = p0 * p1
+                        minusEdgeLabel = 1 if x0 != x1 else 0
+                        
+                        if decisionVector == None:
+                            newTrellis.addToEdgeProb(u.stateId, u.verticalPosInLayer, u.layer//2, v.stateId, v.verticalPosInLayer, v.layer//2, minusEdgeLabel, newEdgeProbToAdd)
+                        else:
+                            if minusEdgeLabel != decisionVector[u.layer//2]:
+                                continue
+
+                            plusEdgeLabel = x1
+                            newTrellis.addToEdgeProb(u.stateId, u.verticalPosInLayer, u.layer//2, v.stateId, v.verticalPosInLayer, v.layer//2, plusEdgeLabel, newEdgeProbToAdd)
+
+
+        return newTrellis
 
 
 def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionProb, trimmedZerosAtEdges=False):

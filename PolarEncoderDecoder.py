@@ -122,6 +122,7 @@ class PolarEncoderDecoder():
                 # For decoding
                 if xyVectorDistribution is not None:
                     marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
+                    # print( marginalizedVector )
                     information[informationVectorIndex] = 0 if marginalizedVector[0] >= marginalizedVector[1] else 1
 
                 encodedVector[0] = information[informationVectorIndex]

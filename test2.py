@@ -2,6 +2,7 @@
 
 import BinaryMemorylessDistribution
 import BinaryMemorylessVectorDistribution as bmvd
+import BinaryTrellis
 import PolarEncoderDecoder
 import random
 
@@ -95,6 +96,9 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
     rngSeed = 0
     misdecodedWords = 0
 
+    useTrellis = True
+    # useTrellis = False
+
     xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
 
     xDistribution.probs.append( [-1.0,-1.0] )
@@ -122,6 +126,8 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
             rand = random.random()
             probSum = 0.0
 
+            # TODO: something is wrong here. Fix the error of not getting the same results with/without trellis, and then come back to this
+            # Also, move this somewhere else
             for y in range(len(xyDistribution.probs)):
                 if probSum + xyDistribution.probXGivenY(x,y) >= rand:
                     receivedWord.append(y)
@@ -129,13 +135,17 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
                 else:
                     probSum += xyDistribution.probXGivenY(x,y)
 
-        xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
+        if useTrellis:
+            xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
+        else:
+            xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
 
         (decodedVector, decodedInformation) = encDec.decode(xVectorDistribution, xyVectorDistribution)
 
         for i in range( encDec.k ):
             if information[i] != decodedInformation[i]:
                 misdecodedWords += 1
+                print( t, ") error, transmitted information: ", information, ", decoded information: ", decodedInformation, ", transmitted codeword: ", codeword, ", received word: ", receivedWord )
                 break
 
     print( "Error probability = ", misdecodedWords, "/", numberOfTrials, " = ", misdecodedWords/numberOfTrials )
@@ -143,8 +153,8 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 # testEncode()
 
 p = 0.11
-L = 100
-n = 6
+L = 1000
+n = 5
 N = 2 ** n
 upperBoundOnErrorProbability = 1.0
 

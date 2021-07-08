@@ -194,7 +194,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
 
         newTrellis = BinaryTrellis(self.length//2)
 
-        if decisionVector != None:
+        if decisionVector is not None:
             assert(len(decisionVector) == self.length//2)
 
         # Copy vertices at start and end
@@ -224,7 +224,7 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
                         newEdgeProbToAdd = p0 * p1
                         minusEdgeLabel = 1 if x0 != x1 else 0
                         
-                        if decisionVector == None:
+                        if decisionVector is None:
                             newTrellis.addToEdgeProb(u.stateId, u.verticalPosInLayer, u.layer//2, v.stateId, v.verticalPosInLayer, v.layer//2, minusEdgeLabel, newEdgeProbToAdd)
                         else:
                             if minusEdgeLabel != decisionVector[u.layer//2]:
@@ -236,6 +236,50 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
 
         return newTrellis
 
+    def calcMarginalizedProbabilities(self):
+        assert( len(self) == 1 )
+
+        marginalizedProbs = np.zeros(2)
+
+        s = 0.0
+        for (vkey, v) in self.verticesInLayer[0].items():
+            for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():
+                s += v.vertexProb * outgoingEdge.edgeProb * outgoingEdge.toVertex.vertexProb
+
+        for (vkey, v) in self.verticesInLayer[0].items():
+            for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():
+                x = outgoingEdge.edgeLabel
+                marginalizedProbs[x] += v.vertexProb * outgoingEdge.edgeProb * outgoingEdge.toVertex.vertexProb / s
+
+        return marginalizedProbs
+
+    def calcNormalizationVector(self):
+        normalization = np.zeros(self.length)
+        tempProbs = np.zeros(2)
+
+        for i in range(self.length):
+            tempProbs[0] = tempProbs[1] = 0.0
+
+            for (vkey, v) in self.verticesInLayer[i].items():
+                for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():
+                    x = outgoingEdge.edgeLabel
+                    tempProbs[x] += outgoingEdge.edgeProb
+
+            normalization[i] = np.maximum( tempProbs[0], tempProbs[1] )
+
+        return normalization
+
+    # normalize according to the above described vector
+    def normalize(self, normalization):
+        for i in range(self.length):
+            t = normalization[i]
+            assert( t >= 0 )
+            if t == 0:
+                t = 1
+
+            for (vkey, v) in self.verticesInLayer[i].items():
+                for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():
+                    outgoingEdge.edgeProb /= t
 
 def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionProb, trimmedZerosAtEdges=False):
     trellis = BinaryTrellis(codewordLength)

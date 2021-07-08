@@ -60,7 +60,7 @@ withGuardBand = Guardbands.addDeletionGuardBands(codeword, n, n0, xi)
 # print(withGuardBand)
 # print(Guardbands.removeDeletionGuardBands(withGuardBand, n, n0))
 
-deletionProb = 0.01
+deletionProb = 0.3
 seed = 0
 trimmedZerosAtEdges=False
 
@@ -71,4 +71,4 @@ print(codeword)
 print(receivedWord)
 print(trellis)
 print(trellis.minusTransform())
-print(trellis.plusTransform([0,1]))
+print(trellis.plusTransform([0,1]).minusTransform().calcMarginalizedProbabilities())

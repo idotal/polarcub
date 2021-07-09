@@ -470,8 +470,8 @@ else:
 
 def makeBSC(p):
     bsc = BinaryMemorylessDistribution()
-    bsc.append( [0.5 * p, 0.5 * (1.0-p)] )
     bsc.append( [0.5 * (1.0-p), 0.5 * p] )
+    bsc.append( [0.5 * p, 0.5 * (1.0-p)] )
     
     return bsc
 

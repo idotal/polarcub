@@ -70,5 +70,6 @@ trellis = BinaryTrellis.buildTrellis_uniformInput_deletion(receivedWord, len(cod
 print(codeword)
 print(receivedWord)
 print(trellis)
-print(trellis.minusTransform())
-print(trellis.plusTransform([0,1]).minusTransform().calcMarginalizedProbabilities())
+# print(trellis.minusTransform())
+print(trellis.plusTransform([0,0]))
+print(trellis.plusTransform([0,0]).plusTransform([1]))

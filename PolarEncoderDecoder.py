@@ -7,7 +7,7 @@ class uIndexType(Enum):
     information = 1
 
 class PolarEncoderDecoder():
-    def __init__(self, length, frozenSet, rngSeed ): # length is the length of the U vector, if rngSeed is set to 0, then we freeze all frozen bits to zero
+    def __init__(self, length, frozenSet, rngSeed): # length is the length of the U vector, if rngSeed is set to 0, then we freeze all frozen bits to zero
         self.rngSeed = rngSeed
         self.frozenSet = frozenSet
         self.length = length
@@ -91,7 +91,69 @@ class PolarEncoderDecoder():
 
         return (encodedVector, information)
 
-    def recursiveEncodeDecode(self, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution=None):
+    def geniePreSteps(self, simulationSeed):
+        self.backupFrozenSet = self.frozenSet
+        self.backupSeed = self.rngSeed
+
+        self.frozenSet = { i for i in range(self.length) }
+        self.rngSeed = simulationSeed
+        self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
+
+    def geniePostSteps(self):
+        self.frozenSet = self.backupFrozenSet 
+        self.rngSeed = self.backupSeed 
+        self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
+
+    def genieSingleDecodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, simulationSeed):
+        """Pick up statistics of a single decoding run
+        Args:
+            xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=0) and P(X=1)
+
+            xyVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-posteriori entries for P(X=0) and P(X=1). That is, entry i contains P(X=0,Y=y_i) and P(X=1,Y=y_i).
+            simulationSeed (int): The seed used to randomly pick the value of the u_i
+
+        Returns:
+            (decodedVector, Pe): a pair of arrays. The first array is the codeword we have produced. Entry i of the second array is the probability of error, min{P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}), P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})}.
+        """
+
+        #TODO: get the encoding simulation running, and then do decoding
+        pass
+
+    def genieSingleEncodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, simulationSeed):
+        """Pick up statistics of a single encoding run
+        Args:
+            xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=0) and P(X=1)
+
+            simulationSeed (int): The seed used to randomly pick the value of the u_i
+
+        Returns:
+            (encodedVector, K): a pair of arrays. The first array is the codeword we have produced. Entry i of the second array is the the total variation |P(U_i=0|U_0^{i-1} = u_0^{i-1})-P(U_i=1|U_0^{i-1} = u_0^{i-1})|.
+        """
+
+        marginalizedUProbs = []
+        uIndex = 0
+        informationVectorIndex = 0
+        infromation = []
+
+        self.geniePreSteps()
+
+        assert( len(xVectorDistribution) == self.length )
+
+        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, genieRandomlyGeneratedNumbers, vectorDistribution, None, marginalizedUProbs)
+
+        assert( next_uIndex == len(encodedVector) == len(xVectorDistribution) )
+        assert( next_informationVectorIndex == len(information) == 0 )
+
+        Pevec = np.zeros(self.length)
+
+        # TODO: create Pevec
+
+        # return things to the way they were
+        self.geniePostSteps()
+
+        return (encodedVector, Pevec)
+
+    def recursiveEncodeDecode(self, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution=None, marginalizedUProbs=None):
         """Encode/decode according to supplied vector distributions
 
         Args:
@@ -106,6 +168,8 @@ class PolarEncoderDecoder():
             xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector (whose length is a function of the recursion depth) with a-priori entries for P(X=0) and P(X=1)
 
             xyVectorDistribution (VectorDistribution): in a memorylyess setting, this is essentially a vector (whose length is a function of the recursion depth) with a-posteriori entries for P(x=0) and P(x=1). A None value means we are encoding.
+
+            marginalizedUProbs (numpy array of float): we populate (return) this array so that if xyVectorDistribution is None (encoding), then marginalizedUProbs[i][x] = P(U_i=x|U_0^{i-1} = \hat{u}_0^{i-1}). Otherwise, marginalizedUProbs[i][x] = P(U_i=x|U_0^{i-1} = \hat{u}_0^{i-1}, Y_0^{N-1} = y_0^{N-1}). For genie decoding, we will have \hat{u}_i = u_i, as the frozen set contains all indices.
 
         Returns:
             (encodedVector, next_uIndex, next_informationVectorIndex): the recursive encoding of the relevant part of the information vector, as well as updated values for the parameters uIndex and informationVectorIndex
@@ -128,7 +192,6 @@ class PolarEncoderDecoder():
                 encodedVector[0] = information[informationVectorIndex]
                 next_uIndex = uIndex + 1
                 next_informationVectorIndex = informationVectorIndex + 1
-                return (encodedVector, next_uIndex, next_informationVectorIndex)
             else:
                 marginalizedVector = xVectorDistribution.calcMarginalizedProbabilities()
                 if marginalizedVector[0] >= randomlyGeneratedNumbers[uIndex]:
@@ -136,9 +199,20 @@ class PolarEncoderDecoder():
                 else:
                     encodedVector[0] = 1
 
+
                 next_uIndex = uIndex + 1
                 next_informationVectorIndex = informationVectorIndex
-                return (encodedVector, next_uIndex, next_informationVectorIndex)
+
+            # should we return the marginalized probabilities?
+            if marginalizedUProbs is not None:
+                if xyVectorDistribution is not None:
+                    marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
+                else:
+                    marginalizedVector = xVectorDistribution.calcMarginalizedProbabilities()
+                marginalizedUProbs[uIndex][0] = marginalizedVector[0]
+                marginalizedUProbs[uIndex][1] = marginalizedVector[1]
+
+            return (encodedVector, next_uIndex, next_informationVectorIndex)
         else:
             xMinusVectorDistribution = xVectorDistribution.minusTransform()
             normalization = xMinusVectorDistribution.calcNormalizationVector()

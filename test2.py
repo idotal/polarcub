@@ -126,11 +126,11 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
             rand = random.random()
             probSum = 0.0
 
-            # TODO: something is wrong here. Fix the error of not getting the same results with/without trellis, and then come back to this
-            # Also, move this somewhere else
+            # TODO: move this somewhere else
             for y in range(len(xyDistribution.probs)):
                 if probSum + xyDistribution.probXGivenY(x,y) >= rand:
                     receivedWord.append(y)
+                    # print("x = ", x, ", y = ", y, " probXGivenY(x,y) = ", xyDistribution.probXGivenY(x,y), ", rand = ", rand)
                     break
                 else:
                     probSum += xyDistribution.probXGivenY(x,y)

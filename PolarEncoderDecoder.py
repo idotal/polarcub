@@ -143,10 +143,12 @@ class PolarEncoderDecoder():
 
         assert( next_uIndex == len(encodedVector) == len(xVectorDistribution) )
         assert( next_informationVectorIndex == len(information) == 0 )
+        assert( len(marginalizedUProbs) ==  self.length )
 
-        Pevec = np.zeros(self.length)
+        Pevec = []
 
-        # TODO: create Pevec
+        for probPair in marginalizedUProbs:
+            Pevec.append( min( probPair[0], probPair[1] )
 
         # return things to the way they were
         self.geniePostSteps()
@@ -169,7 +171,7 @@ class PolarEncoderDecoder():
 
             xyVectorDistribution (VectorDistribution): in a memorylyess setting, this is essentially a vector (whose length is a function of the recursion depth) with a-posteriori entries for P(x=0) and P(x=1). A None value means we are encoding.
 
-            marginalizedUProbs (numpy array of float): we populate (return) this array so that if xyVectorDistribution is None (encoding), then marginalizedUProbs[i][x] = P(U_i=x|U_0^{i-1} = \hat{u}_0^{i-1}). Otherwise, marginalizedUProbs[i][x] = P(U_i=x|U_0^{i-1} = \hat{u}_0^{i-1}, Y_0^{N-1} = y_0^{N-1}). For genie decoding, we will have \hat{u}_i = u_i, as the frozen set contains all indices.
+            marginalizedUProbs (empty array, or None): If not None, we populate (return) this array so that if xyVectorDistribution is None (encoding), then marginalizedUProbs[i][x] = P(U_i=x|U_0^{i-1} = \hat{u}_0^{i-1}). Otherwise, marginalizedUProbs[i][x] = P(U_i=x|U_0^{i-1} = \hat{u}_0^{i-1}, Y_0^{N-1} = y_0^{N-1}). For genie decoding, we will have \hat{u}_i = u_i, as the frozen set contains all indices.
 
         Returns:
             (encodedVector, next_uIndex, next_informationVectorIndex): the recursive encoding of the relevant part of the information vector, as well as updated values for the parameters uIndex and informationVectorIndex
@@ -209,8 +211,7 @@ class PolarEncoderDecoder():
                     marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
                 else:
                     marginalizedVector = xVectorDistribution.calcMarginalizedProbabilities()
-                marginalizedUProbs[uIndex][0] = marginalizedVector[0]
-                marginalizedUProbs[uIndex][1] = marginalizedVector[1]
+                marginalizedUProbs.append( [marginalizedVector[0], marginalizedVector[1]] )
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
         else:

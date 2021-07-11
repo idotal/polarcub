@@ -1,5 +1,6 @@
 import numpy as np
 import random as rand
+import BinaryMemorylessDistribution
 from enum import Enum
 
 class uIndexType(Enum):
@@ -113,13 +114,13 @@ class PolarEncoderDecoder():
             simulationSeed (int): The seed used to randomly pick the value of the u_i
 
         Returns:
-            (decodedVector, Pe): a pair of arrays. The first array is the codeword we have produced. Entry i of the second array is the probability of error, min{P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}), P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})}.
+            (decodedVector, Pe, H): a triplet of arrays. The first array is the codeword we have produced. Entry i of the second array is the probability of error, min{P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}), P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})}. Entry i of the third array is the entropy, -P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})) - P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}))
         """
 
         #TODO: get the encoding simulation running, and then do decoding
         pass
 
-    def genieSingleEncodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, simulationSeed):
+    def genieSingleEncodeSimulatioan(self, xVectorDistribution, simulationSeed):
         """Pick up statistics of a single encoding run
         Args:
             xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=0) and P(X=1)
@@ -127,33 +128,36 @@ class PolarEncoderDecoder():
             simulationSeed (int): The seed used to randomly pick the value of the u_i
 
         Returns:
-            (encodedVector, K): a pair of arrays. The first array is the codeword we have produced. Entry i of the second array is the the total variation |P(U_i=0|U_0^{i-1} = u_0^{i-1})-P(U_i=1|U_0^{i-1} = u_0^{i-1})|.
+            (encodedVector, TVvec, H): a triplet of arrays. The first array is the codeword we have produced. Entry i of the second array is the the total variation |P(U_i=0|U_0^{i-1} = u_0^{i-1})-P(U_i=1|U_0^{i-1} = u_0^{i-1})|. Entry i of the third array is the entropy, -P(U_i=0|U_0^{i-1} = u_0^{i-1} * log_2(P(U_i=0|U_0^{i-1} = u_0^{i-1}) - P(U_i=1|U_0^{i-1} = u_0^{i-1} * log_2(P(U_i=1|U_0^{i-1} = u_0^{i-1})
         """
 
         marginalizedUProbs = []
         uIndex = 0
         informationVectorIndex = 0
-        infromation = []
+        information = []
 
-        self.geniePreSteps()
+        self.geniePreSteps(simulationSeed)
 
         assert( len(xVectorDistribution) == self.length )
 
-        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, genieRandomlyGeneratedNumbers, vectorDistribution, None, marginalizedUProbs)
+        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, None, marginalizedUProbs)
 
+        # print( encodedVector, marginalizedUProbs )
         assert( next_uIndex == len(encodedVector) == len(xVectorDistribution) )
         assert( next_informationVectorIndex == len(information) == 0 )
         assert( len(marginalizedUProbs) ==  self.length )
 
-        Pevec = []
+        TVvec = []
+        Hvec = []
 
         for probPair in marginalizedUProbs:
-            Pevec.append( min( probPair[0], probPair[1] )
+            TVvec.append( abs( probPair[0] - probPair[1]) )
+            Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
 
         # return things to the way they were
         self.geniePostSteps()
 
-        return (encodedVector, Pevec)
+        return (encodedVector, TVvec, Hvec)
 
     def recursiveEncodeDecode(self, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution=None, marginalizedUProbs=None):
         """Encode/decode according to supplied vector distributions
@@ -227,7 +231,7 @@ class PolarEncoderDecoder():
             else:
                 xyMinusVectorDistribution = None
 
-            (minusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xMinusVectorDistribution, xyMinusVectorDistribution)
+            (minusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xMinusVectorDistribution, xyMinusVectorDistribution, marginalizedUProbs)
 
             xPlusVectorDistribution = xVectorDistribution.plusTransform(minusEncodedVector)
             normalization = xPlusVectorDistribution.calcNormalizationVector()
@@ -243,7 +247,7 @@ class PolarEncoderDecoder():
 
             uIndex = next_uIndex
             informationVectorIndex = next_informationVectorIndex
-            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xPlusVectorDistribution, xyPlusVectorDistribution)
+            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xPlusVectorDistribution, xyPlusVectorDistribution, marginalizedUProbs)
 
             halfLength = len(xVectorDistribution) // 2
 

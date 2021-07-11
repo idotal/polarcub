@@ -67,6 +67,43 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
 
     return frozenSet
 
+def genieEncode():
+    uLen = 32
+
+    frozenSet = set()
+
+    vecDist = bmvd.BinaryMemorylessVectorDistribution(uLen)
+    for i in range(uLen):
+        vecDist.probs[i][0] = 0.11
+        vecDist.probs[i][1] = 0.89
+
+    encoder = PolarEncoderDecoder.PolarEncoderDecoder(uLen, frozenSet, 0)
+
+    TVvec = None
+    Hvec = None
+    numTrials = 1000
+
+    for rngSeed in range(numTrials):
+        (encodedVector, TVvecTemp, HvecTemp) = encoder.genieSingleEncodeSimulatioan(vecDist, rngSeed)
+        if  TVvec is None:
+            TVvec = TVvecTemp
+            Hvec = HvecTemp
+        else:
+            assert( len(TVvec) == len(TVvecTemp) )
+            for i in range(len(TVvec)):
+                TVvec[i] += TVvecTemp[i]
+                Hvec[i] += HvecTemp[i]
+
+    Hsum = 0.0
+    for i in range(len(TVvec)):
+        TVvec[i] /= numTrials
+        Hvec[i] /= numTrials
+        Hsum += Hvec[i]
+
+    print( TVvec )
+    print( Hvec )
+    print( Hsum /len(Hvec) )
+
 def testEncode():
     uLen = 8
 
@@ -152,20 +189,21 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 
 # testEncode()
 
-p = 0.11
-L = 1000
-n = 5
-N = 2 ** n
-upperBoundOnErrorProbability = 1.0
-
-xDistribution = None
-xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
-
-frozenSet = calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
-
-print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
-
-numberOfTrials = 2000
-
-encodeDecodeSimulation(N, frozenSet, xyDistribution, numberOfTrials)
-
+genieEncode()
+# p = 0.11
+# L = 1000
+# n = 5
+# N = 2 ** n
+# upperBoundOnErrorProbability = 1.0
+#
+# xDistribution = None
+# xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
+#
+# frozenSet = calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
+#
+# print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
+#
+# numberOfTrials = 2000
+#
+# encodeDecodeSimulation(N, frozenSet, xyDistribution, numberOfTrials)
+#

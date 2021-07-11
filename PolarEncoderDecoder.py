@@ -117,8 +117,33 @@ class PolarEncoderDecoder():
             (decodedVector, Pe, H): a triplet of arrays. The first array is the codeword we have produced. Entry i of the second array is the probability of error, min{P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}), P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})}. Entry i of the third array is the entropy, -P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})) - P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}))
         """
 
-        #TODO: get the encoding simulation running, and then do decoding
-        pass
+        marginalizedUProbs = []
+        uIndex = 0
+        informationVectorIndex = 0
+        information = []
+
+        self.geniePreSteps(simulationSeed)
+
+        assert( len(xVectorDistribution) == self.length )
+
+        (decodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution, marginalizedUProbs)
+
+        # print( decodedVector, marginalizedUProbs )
+        assert( next_uIndex == len(decodedVector) == len(xVectorDistribution) )
+        assert( next_informationVectorIndex == len(information) == 0 )
+        assert( len(marginalizedUProbs) ==  self.length )
+
+        Pevec = []
+        Hvec = []
+
+        for probPair in marginalizedUProbs:
+            Pevec.append( min( probPair[0], probPair[1]) )
+            Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
+
+        # return things to the way they were
+        self.geniePostSteps()
+
+        return (decodedVector, Pevec, Hvec)
 
     def genieSingleEncodeSimulatioan(self, xVectorDistribution, simulationSeed):
         """Pick up statistics of a single encoding run

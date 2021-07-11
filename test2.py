@@ -68,7 +68,7 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
     return frozenSet
 
 def genieEncode():
-    uLen = 32
+    uLen = 8
 
     frozenSet = set()
 
@@ -81,7 +81,7 @@ def genieEncode():
 
     TVvec = None
     Hvec = None
-    numTrials = 1000
+    numTrials = 100
 
     for rngSeed in range(numTrials):
         (encodedVector, TVvecTemp, HvecTemp) = encoder.genieSingleEncodeSimulatioan(vecDist, rngSeed)
@@ -103,6 +103,84 @@ def genieEncode():
     print( TVvec )
     print( Hvec )
     print( Hsum /len(Hvec) )
+
+def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials): 
+
+    rngSeed = 0
+
+    # useTrellis = True
+    useTrellis = False
+
+    xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
+
+    xDistribution.probs.append( [-1.0,-1.0] )
+    for x in range(2):
+        xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
+
+    xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
+
+    frozenSet = set()
+    TVvec = None
+    HEncvec = None
+    HDecvec = None
+
+    encDec = PolarEncoderDecoder.PolarEncoderDecoder(length, frozenSet, rngSeed)
+
+    for rngSeed in range(numberOfTrials):
+        (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, rngSeed)
+
+        receivedWord = []
+        # TODO: move this somewhere else (this code is duplicated, which is bad!)
+        for j in range(length):
+            x = encodedVector[j]
+
+            rand = random.random()
+            probSum = 0.0
+
+            for y in range(len(xyDistribution.probs)):
+                if probSum + xyDistribution.probXGivenY(x,y) >= rand:
+                    receivedWord.append(y)
+                    # print("x = ", x, ", y = ", y, " probXGivenY(x,y) = ", xyDistribution.probXGivenY(x,y), ", rand = ", rand)
+                    break
+                else:
+                    probSum += xyDistribution.probXGivenY(x,y)
+
+        if useTrellis:
+            xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
+        else:
+            xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
+
+        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, rngSeed)
+
+        if  TVvec is None:
+            TVvec = TVvecTemp
+            Pevec = PevecTemp
+            HEncvec = HencvecTemp
+            HDecvec = HdecvecTemp
+        else:
+            assert( len(TVvec) == len(TVvecTemp) )
+            for i in range(len(TVvec)):
+                TVvec[i] += TVvecTemp[i]
+                Pevec[i] += PevecTemp[i]
+                HEncvec[i] += HencvecTemp[i]
+                HDecvec[i] += HdecvecTemp[i]
+
+    HEncsum = 0.0
+    HDecsum = 0.0
+    for i in range(len(TVvec)):
+        TVvec[i] /= numberOfTrials
+        Pevec[i] /= numberOfTrials
+        HEncvec[i] /= numberOfTrials
+        HDecvec[i] /= numberOfTrials
+        HEncsum += HEncvec[i]
+        HDecsum += HDecvec[i]
+
+    print( TVvec )
+    print( Pevec )
+    print( HEncvec )
+    print( HDecvec )
+    print( HEncsum /len(HEncvec) )
+    print( HDecsum /len(HDecvec) )
 
 def testEncode():
     uLen = 8
@@ -157,13 +235,13 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
         codeword = encDec.encode(xVectorDistribution, information)
         receivedWord = []
 
+        # TODO: move this somewhere else (this code is duplicated, which is bad!)
         for j in range(length):
             x = codeword[j]
 
             rand = random.random()
             probSum = 0.0
 
-            # TODO: move this somewhere else
             for y in range(len(xyDistribution.probs)):
                 if probSum + xyDistribution.probXGivenY(x,y) >= rand:
                     receivedWord.append(y)
@@ -189,21 +267,19 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 
 # testEncode()
 
-genieEncode()
-# p = 0.11
-# L = 1000
-# n = 5
-# N = 2 ** n
+p = 0.11
+L = 1000
+n = 5
+N = 2 ** n
 # upperBoundOnErrorProbability = 1.0
-#
-# xDistribution = None
-# xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
-#
+
+xDistribution = None
+xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
+
 # frozenSet = calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
 #
 # print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
-#
-# numberOfTrials = 2000
-#
-# encodeDecodeSimulation(N, frozenSet, xyDistribution, numberOfTrials)
-#
+
+numberOfTrials = 2000
+
+genieEncodeDecodeSimulation(N, xyDistribution, L)

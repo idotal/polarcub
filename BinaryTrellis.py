@@ -236,15 +236,18 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
 
         return newTrellis
 
-    def calcMarginalizedProbabilities(self):
+    def calcMarginalizedProbabilities(self, normalize=True):
         assert( len(self) == 1 )
 
         marginalizedProbs = np.zeros(2)
 
-        s = 0.0
-        for (vkey, v) in self.verticesInLayer[0].items():
-            for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():
-                s += v.vertexProb * outgoingEdge.edgeProb * outgoingEdge.toVertex.vertexProb
+        if normalize == True:
+            s = 0.0
+            for (vkey, v) in self.verticesInLayer[0].items():
+                for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():
+                    s += v.vertexProb * outgoingEdge.edgeProb * outgoingEdge.toVertex.vertexProb
+        else:
+            s = 1.0
 
         for (vkey, v) in self.verticesInLayer[0].items():
             for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():

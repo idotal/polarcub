@@ -176,12 +176,44 @@ def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials):
         HEncsum += HEncvec[i]
         HDecsum += HDecvec[i]
 
-    print( TVvec )
-    print( Pevec )
-    print( HEncvec )
-    print( HDecvec )
-    print( HEncsum /len(HEncvec) )
-    print( HDecsum /len(HDecvec) )
+    print( "TVVec = ", TVvec )
+    print( "pevec = ", Pevec )
+    print( "HEncvec = ", HEncvec )
+    print( "HDecvec = ", HDecvec )
+    print( "Normalized HEncsum = ",  HEncsum /len(HEncvec) )
+    print( "Normalized HDecsum = ", HDecsum /len(HDecvec) )
+
+    TVPlusPeVec = []
+
+    for i in range(len(TVvec)):
+        TVPlusPeVec.append(TVvec[i] + Pevec[i])
+
+    errorUpperBound = 0.1
+
+    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
+
+    print( sortedIndices )
+
+    errorSum = 0.0
+    indexInSortedIndicesArray = -1
+    frozenSet = set()
+
+    while errorSum < errorUpperBound and indexInSortedIndicesArray + 1 < len(TVPlusPeVec):
+        i = sortedIndices[indexInSortedIndicesArray + 1]
+        if TVPlusPeVec[i] + errorSum <= errorUpperBound:
+            errorSum += TVPlusPeVec[i]
+            indexInSortedIndicesArray += 1
+        else:
+            break
+
+    for j in range(indexInSortedIndicesArray+1,  len(TVPlusPeVec)):
+        i = sortedIndices[j]
+        frozenSet.add(i)
+
+    print( frozenSet )
+    print( 1.0 - len(frozenSet) / len(HEncvec) )
+
+    
 
 def testEncode():
     uLen = 8
@@ -212,8 +244,8 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
     rngSeed = 0
     misdecodedWords = 0
 
-    useTrellis = True
-    # useTrellis = False
+    # useTrellis = True
+    useTrellis = False
 
     xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
 
@@ -270,7 +302,7 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 
 p = 0.11
 L = 1000
-n = 5
+n = 7
 N = 2 ** n
 # upperBoundOnErrorProbability = 1.0
 

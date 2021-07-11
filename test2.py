@@ -108,8 +108,8 @@ def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials):
 
     rngSeed = 0
 
-    # useTrellis = True
-    useTrellis = False
+    useTrellis = True
+    # useTrellis = False
 
     xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
 
@@ -126,7 +126,8 @@ def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials):
 
     encDec = PolarEncoderDecoder.PolarEncoderDecoder(length, frozenSet, rngSeed)
 
-    for rngSeed in range(numberOfTrials):
+    # DO *NOT* SET SEED TO 0, AS THIS TAKES THE SYSTEM CLOCK AS A SEED!!!
+    for rngSeed in range(1, numberOfTrials+1):
         (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, rngSeed)
 
         receivedWord = []
@@ -149,7 +150,7 @@ def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials):
             xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
         else:
             xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
-
+        
         (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, rngSeed)
 
         if  TVvec is None:
@@ -280,6 +281,6 @@ xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
 #
 # print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
 
-numberOfTrials = 2000
+# numberOfTrials = 2000
 
 genieEncodeDecodeSimulation(N, xyDistribution, L)

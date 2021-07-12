@@ -1,6 +1,7 @@
 import numpy as np
 import random as rand
 import BinaryMemorylessDistribution
+import random
 from enum import Enum
 
 class uIndexType(Enum):
@@ -8,7 +9,7 @@ class uIndexType(Enum):
     information = 1
 
 class PolarEncoderDecoder():
-    def __init__(self, length, frozenSet, rngSeed): # length is the length of the U vector, if rngSeed is set to 0, then we freeze all frozen bits to zero
+    def __init__(self, length, frozenSet, rngSeed): # length is the length of the U vector, if rngSeed is set to -1, then we freeze all frozen bits to zero
         self.rngSeed = rngSeed
         self.frozenSet = frozenSet
         self.length = length
@@ -29,7 +30,7 @@ class PolarEncoderDecoder():
         self.randomlyGeneratedNumbers = np.empty(self.length)
         self.randomlyGeneratedNumbers[:] = np.nan
 
-        if self.rngSeed != 0:
+        if self.rngSeed != -1:
             rand.seed(self.rngSeed)
 
             for i in range(self.length):
@@ -206,7 +207,7 @@ class PolarEncoderDecoder():
             (encodedVector, next_uIndex, next_informationVectorIndex): the recursive encoding of the relevant part of the information vector, as well as updated values for the parameters uIndex and informationVectorIndex
         """
     
-        # By defualt, we assume encoding, and add small corrections for decoding.
+        # By default, we assume encoding, and add small corrections for decoding.
 
         encodedVector = np.empty(len(xVectorDistribution), np.int64)
         encodedVector[:] = -1
@@ -282,3 +283,151 @@ class PolarEncoderDecoder():
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
 
+def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, codeRngSeed=1):
+    """Run a polar encoder and a corresponding decoder (SC, not SCL)
+
+    Args:
+       length (int): the number of indices in the polar transformed vector
+
+       make_xVectorDistribution (function): return xVectorDistribution, and takes no arguments
+
+       make_codeword (function): make a codeword out of the encodedVector (for example, by doing nothing, or by adding guard bands)
+
+       simulateChannel (function): transfroms a codeword to a recieved word, using the current state of the random number generator
+
+       make_xyVectrorDistribution (function): return xyVectorDistribution, as a function of the received word
+
+       frozenSet (set): the set of (dynamically) frozen indices
+    """
+
+    misdecodedWords = 0
+
+    xVectorDistribution = make_xVectorDistribution()
+
+    encDec = PolarEncoderDecoder(length, frozenSet, codeRngSeed)
+
+    random.seed(1)
+
+    for t in range(numberOfTrials):
+        information = []
+        for i in range( encDec.k ):
+            inf = 0 if random.random() < 0.5 else 1
+            information.append(inf)
+
+        encodedVector = encDec.encode(xVectorDistribution, information)
+
+        codeword = make_codeword(encodedVector)
+
+        receivedWord = simulateChannel(codeword)
+
+        xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
+
+        (decodedVector, decodedInformation) = encDec.decode(xVectorDistribution, xyVectorDistribution)
+
+        for i in range( encDec.k ):
+            if information[i] != decodedInformation[i]:
+                misdecodedWords += 1
+                print( t, ") error, transmitted information: ", information, ", decoded information: ", decodedInformation, ", transmitted codeword: ", codeword, ", received word: ", receivedWord )
+                break
+
+    print( "Error probability = ", misdecodedWords, "/", numberOfTrials, " = ", misdecodedWords/numberOfTrials )
+
+def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet):
+    """Run a genie encoder and corresponding decoder, and return frozen set
+
+    Args:
+       length (int): the number of indices in the polar transformed vector
+
+       make_xVectorDistribution (function): return xVectorDistribution, and takes no arguments
+
+       make_codeword (function): make a codeword out of the encodedVector (for example, by doing nothing, or by adding guard bands)
+
+       simulateChannel (function): transfroms a codeword to a recieved word, using the current state of the random number generator
+
+       make_xyVectrorDistribution (function): return xyVectorDistribution, as a function of the received word
+
+       numberOfTrials (int): number of Monte-Carlo simulations
+    """
+
+    rngSeed = 0
+
+    xVectorDistribution = make_xVectorDistribution()
+
+    frozenSet = set()
+    TVvec = None
+    HEncvec = None
+    HDecvec = None
+
+    encDec = PolarEncoderDecoder(length, frozenSet, rngSeed)
+
+    # DO *NOT* SET SEED TO 0, AS THIS TAKES THE SYSTEM CLOCK AS A SEED!!!
+    for rngSeed in range(1, numberOfTrials+1):
+        (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, rngSeed)
+
+        codeword = make_codeword(encodedVector)
+
+        receivedWord = simulateChannel(codeword)
+
+        xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
+
+        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, rngSeed)
+
+        if  TVvec is None:
+            TVvec = TVvecTemp
+            Pevec = PevecTemp
+            HEncvec = HencvecTemp
+            HDecvec = HdecvecTemp
+        else:
+            assert( len(TVvec) == len(TVvecTemp) )
+            for i in range(len(TVvec)):
+                TVvec[i] += TVvecTemp[i]
+                Pevec[i] += PevecTemp[i]
+                HEncvec[i] += HencvecTemp[i]
+                HDecvec[i] += HdecvecTemp[i]
+
+    HEncsum = 0.0
+    HDecsum = 0.0
+    for i in range(len(TVvec)):
+        TVvec[i] /= numberOfTrials
+        Pevec[i] /= numberOfTrials
+        HEncvec[i] /= numberOfTrials
+        HDecvec[i] /= numberOfTrials
+        HEncsum += HEncvec[i]
+        HDecsum += HDecvec[i]
+
+    print( "TVVec = ", TVvec )
+    print( "pevec = ", Pevec )
+    print( "HEncvec = ", HEncvec )
+    print( "HDecvec = ", HDecvec )
+    print( "Normalized HEncsum = ",  HEncsum /len(HEncvec) )
+    print( "Normalized HDecsum = ", HDecsum /len(HDecvec) )
+
+    TVPlusPeVec = []
+
+    for i in range(len(TVvec)):
+        TVPlusPeVec.append(TVvec[i] + Pevec[i])
+
+    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
+
+    print( sortedIndices )
+
+    errorSum = 0.0
+    indexInSortedIndicesArray = -1
+    frozenSet = set()
+
+    while errorSum < errorUpperBoundForFrozenSet and indexInSortedIndicesArray + 1 < len(TVPlusPeVec):
+        i = sortedIndices[indexInSortedIndicesArray + 1]
+        if TVPlusPeVec[i] + errorSum <= errorUpperBoundForFrozenSet:
+            errorSum += TVPlusPeVec[i]
+            indexInSortedIndicesArray += 1
+        else:
+            break
+
+    for j in range(indexInSortedIndicesArray+1,  len(TVPlusPeVec)):
+        i = sortedIndices[j]
+        frozenSet.add(i)
+
+    print( frozenSet )
+    print( 1.0 - len(frozenSet) / len(HEncvec) )
+
+    return frozenSet

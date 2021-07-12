@@ -53,6 +53,8 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
 
     N = 1 << n
 
+    # TODO: This is sub-optimal. Change this to a calculation similar to what we do with the genie.
+    # TODO: Actually, factor common code out into a new function
     if xDistribution is not None:
         delta =  upperBoundOnErrorProbability / (2 * N)
         for i in 2 ** n:
@@ -67,44 +69,7 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
 
     return frozenSet
 
-def genieEncode():
-    uLen = 8
-
-    frozenSet = set()
-
-    vecDist = bmvd.BinaryMemorylessVectorDistribution(uLen)
-    for i in range(uLen):
-        vecDist.probs[i][0] = 0.11
-        vecDist.probs[i][1] = 0.89
-
-    encoder = PolarEncoderDecoder.PolarEncoderDecoder(uLen, frozenSet, 0)
-
-    TVvec = None
-    Hvec = None
-    numTrials = 100
-
-    for rngSeed in range(numTrials):
-        (encodedVector, TVvecTemp, HvecTemp) = encoder.genieSingleEncodeSimulatioan(vecDist, rngSeed)
-        if  TVvec is None:
-            TVvec = TVvecTemp
-            Hvec = HvecTemp
-        else:
-            assert( len(TVvec) == len(TVvecTemp) )
-            for i in range(len(TVvec)):
-                TVvec[i] += TVvecTemp[i]
-                Hvec[i] += HvecTemp[i]
-
-    Hsum = 0.0
-    for i in range(len(TVvec)):
-        TVvec[i] /= numTrials
-        Hvec[i] /= numTrials
-        Hsum += Hvec[i]
-
-    print( TVvec )
-    print( Hvec )
-    print( Hsum /len(Hvec) )
-
-def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials): 
+def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet):
     """Run a genie encoder and corresponding decoder, and return frozen set
 
     Args:
@@ -139,7 +104,6 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
         codeword = make_codeword(encodedVector)
 
         receivedWord = simulateChannel(codeword)
-        
 
         xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
 
@@ -180,8 +144,6 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
     for i in range(len(TVvec)):
         TVPlusPeVec.append(TVvec[i] + Pevec[i])
 
-    errorUpperBound = 0.1
-
     sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
 
     print( sortedIndices )
@@ -192,7 +154,7 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
 
     while errorSum < errorUpperBound and indexInSortedIndicesArray + 1 < len(TVPlusPeVec):
         i = sortedIndices[indexInSortedIndicesArray + 1]
-        if TVPlusPeVec[i] + errorSum <= errorUpperBound:
+        if TVPlusPeVec[i] + errorSum <= errorUpperBoundForFrozenSet:
             errorSum += TVPlusPeVec[i]
             indexInSortedIndicesArray += 1
         else:
@@ -231,21 +193,26 @@ def testEncode():
     print( "got here" )
     print( encodedVector )
 
-def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials): 
+def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, rngSeed=1):
+    """Run a polar encoder and a corresponding decoder (SC, not SCL)
 
-    rngSeed = 0
+    Args:
+       length (int): the number of indices in the polar transformed vector
+
+       make_xVectorDistribution (function): return xVectorDistribution, and takes no arguments
+
+       make_codeword (function): make a codeword out of the encodedVector (for example, by doing nothing, or by adding guard bands)
+
+       simulateChannel (function): transfroms a codeword to a recieved word, using the current state of the random number generator
+
+       make_xyVectrorDistribution (function): return xyVectorDistribution, as a function of the received word
+
+       frozenSet (set): the set of (dynamically) frozen indices
+    """
+
     misdecodedWords = 0
 
-    # useTrellis = True
-    useTrellis = False
-
-    xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
-
-    xDistribution.probs.append( [-1.0,-1.0] )
-    for x in range(2):
-        xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
-
-    xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
+    xVectorDistribution = make_xVectorDistribution()
 
     encDec = PolarEncoderDecoder.PolarEncoderDecoder(length, frozenSet, rngSeed)
 
@@ -257,28 +224,13 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
             inf = 0 if random.random() < 0.5 else 1
             information.append(inf)
 
-        codeword = encDec.encode(xVectorDistribution, information)
-        receivedWord = []
+        encodedVector = encDec.encode(xVectorDistribution, information)
 
-        # TODO: move this somewhere else (this code is duplicated, which is bad!)
-        for j in range(length):
-            x = codeword[j]
+        codeword = make_codeword(encodedVector)
 
-            rand = random.random()
-            probSum = 0.0
+        receivedWord = simulateChannel(codeword)
 
-            for y in range(len(xyDistribution.probs)):
-                if probSum + xyDistribution.probXGivenY(x,y) >= rand:
-                    receivedWord.append(y)
-                    # print("x = ", x, ", y = ", y, " probXGivenY(x,y) = ", xyDistribution.probXGivenY(x,y), ", rand = ", rand)
-                    break
-                else:
-                    probSum += xyDistribution.probXGivenY(x,y)
-
-        if useTrellis:
-            xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
-        else:
-            xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
+        xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
 
         (decodedVector, decodedInformation) = encDec.decode(xVectorDistribution, xyVectorDistribution)
 
@@ -290,7 +242,7 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 
     print( "Error probability = ", misdecodedWords, "/", numberOfTrials, " = ", misdecodedWords/numberOfTrials )
 
-# testEncode()
+# TODO: move these into BinaryMemorylessDistribution, and perhaps make them class methods
 
 def make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, length):
     def make_xVectorDistribuiton():
@@ -345,24 +297,25 @@ def make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution):
 
 p = 0.11
 L = 1000
-n = 7
+n = 6
 N = 2 ** n
-# upperBoundOnErrorProbability = 1.0
+
+upperBoundOnErrorProbability = 0.1
 
 xDistribution = None
 xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
 
-# frozenSet = calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
-#
-# print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
+frozenSet = calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
 
-# numberOfTrials = 2000
+print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
 
-# genieEncodeDecodeSimulation(N, xyDistribution, L)
+numberOfTrials = 2000
+
 make_xVectorDistribuiton = make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, N)
 make_codeword = make_codeword_noprocessing
 simulateChannel = simulateChannel_fromBinaryMemorylessDistribution(xyDistribution)
 make_xyVectorDistribution = make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution)
 
-genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, L)
+encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet)
 
+# genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, L)

@@ -58,5 +58,25 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
                     newBinaryMemorylessVectorDistribution.probs[i][x] = marginalizedProbs[x]
 
             return newBinaryMemorylessVectorDistribution
+
+    def calcMarginalizedProbabilities(self):
+        """Since a collection of trellises is eventually colapsed to a simple joint distribution after enough transforms, we should not get to this point
+        """
+
+        assert(False)
+
+    def calcNormalizationVector(self):
+        normalization = []
+
+        for i in range(self.numberOfTrellises):
+            trellisNormalization = self.trellises[i].calcNormalizationVector()
+
+        return normalization
+
             
+    def normalize(self, normalization):
+        assert( len(normalization) == slef.numberOfTrellies)
+
+        for i in range(self.numberOfTrellises):
+            self.trellises[i].normalize(normalization[i])
 

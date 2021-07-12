@@ -104,20 +104,24 @@ def genieEncode():
     print( Hvec )
     print( Hsum /len(Hvec) )
 
-def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials): 
+def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials): 
+    """Run a genie encoder and corresponding decoder, and return frozen set
+
+    """
 
     rngSeed = 0
 
-    useTrellis = True
-    # useTrellis = False
-
-    xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
-
-    xDistribution.probs.append( [-1.0,-1.0] )
-    for x in range(2):
-        xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
-
-    xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
+    # useTrellis = True
+    # # useTrellis = False
+    #
+    # xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
+    #
+    # xDistribution.probs.append( [-1.0,-1.0] )
+    # for x in range(2):
+    #     xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
+    #
+    # xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
+    xVectorDistribution = make_xVectorDistribution()
 
     frozenSet = set()
     TVvec = None
@@ -130,27 +134,33 @@ def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials):
     for rngSeed in range(1, numberOfTrials+1):
         (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, rngSeed)
 
-        receivedWord = []
-        # TODO: move this somewhere else (this code is duplicated, which is bad!)
-        for j in range(length):
-            x = encodedVector[j]
+        codeword = make_codeword(encodedVector)
 
-            rand = random.random()
-            probSum = 0.0
-
-            for y in range(len(xyDistribution.probs)):
-                if probSum + xyDistribution.probXGivenY(x,y) >= rand:
-                    receivedWord.append(y)
-                    # print("x = ", x, ", y = ", y, " probXGivenY(x,y) = ", xyDistribution.probXGivenY(x,y), ", rand = ", rand)
-                    break
-                else:
-                    probSum += xyDistribution.probXGivenY(x,y)
-
-        if useTrellis:
-            xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
-        else:
-            xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
+        receivedWord = simulateChannel(codeword)
+        # receivedWord = []
+        # # TODO: move this somewhere else (this code is duplicated, which is bad!)
+        # for j in range(length):
+        #     x = encodedVector[j]
+        #
+        #     rand = random.random()
+        #     probSum = 0.0
+        #
+        #     for y in range(len(xyDistribution.probs)):
+        #         if probSum + xyDistribution.probXGivenY(x,y) >= rand:
+        #             receivedWord.append(y)
+        #             # print("x = ", x, ", y = ", y, " probXGivenY(x,y) = ", xyDistribution.probXGivenY(x,y), ", rand = ", rand)
+        #             break
+        #         else:
+        #             probSum += xyDistribution.probXGivenY(x,y)
+        #
+        # if useTrellis:
+        #     xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
+        # else:
+        #     xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
         
+
+        xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
+
         (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, rngSeed)
 
         if  TVvec is None:
@@ -213,7 +223,7 @@ def genieEncodeDecodeSimulation(length, xyDistribution, numberOfTrials):
     print( frozenSet )
     print( 1.0 - len(frozenSet) / len(HEncvec) )
 
-    
+    return frozenSet
 
 def testEncode():
     uLen = 8
@@ -300,6 +310,57 @@ def encodeDecodeSimulation(length, frozenSet, xyDistribution, numberOfTrials):
 
 # testEncode()
 
+def make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, length):
+    def make_xVectorDistribuiton():
+        xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
+
+        xDistribution.probs.append( [-1.0,-1.0] )
+        for x in range(2):
+            xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
+        
+        xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
+        return xVectorDistribution
+    return make_xVectorDistribuiton
+
+def make_codeword_noprocessing(encodedVector):
+    return encodedVector
+
+def simulateChannel_fromBinaryMemorylessDistribution(xyDistribution):
+    def simulateChannel(codeword):
+        receivedWord = []
+        length = len(codeword)
+
+        for j in range(length):
+            x = codeword[j]
+        
+            rand = random.random()
+            probSum = 0.0
+        
+            for y in range(len(xyDistribution.probs)):
+                if probSum + xyDistribution.probXGivenY(x,y) >= rand:
+                    receivedWord.append(y)
+                    # print("x = ", x, ", y = ", y, " probXGivenY(x,y) = ", xyDistribution.probXGivenY(x,y), ", rand = ", rand)
+                    break
+                else:
+                    probSum += xyDistribution.probXGivenY(x,y)
+        
+        return receivedWord
+
+    return simulateChannel
+
+def make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution):
+    def make_xyVectrorDistribution(receivedWord):
+        length = len(receivedWord)
+        useTrellis = False
+
+        if useTrellis:
+            xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
+        else:
+            xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
+
+        return xyVectorDistribution
+    return make_xyVectrorDistribution
+
 p = 0.11
 L = 1000
 n = 7
@@ -315,4 +376,11 @@ xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
 
 # numberOfTrials = 2000
 
-genieEncodeDecodeSimulation(N, xyDistribution, L)
+# genieEncodeDecodeSimulation(N, xyDistribution, L)
+make_xVectorDistribuiton = make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, N)
+make_codeword = make_codeword_noprocessing
+simulateChannel = simulateChannel_fromBinaryMemorylessDistribution(xyDistribution)
+make_xyVectorDistribution = make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution)
+
+genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, L)
+

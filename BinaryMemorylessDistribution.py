@@ -466,7 +466,7 @@ else:
 # def myisclose(a, b):
 #     return True if abs(a-b) < 100.0 * sys.float_info.epsilon else False
 
-# useful channels
+# useful channels and sources
 
 def makeBSC(p):
     bsc = BinaryMemorylessDistribution()
@@ -482,6 +482,12 @@ def makeBEC(p):
     bec.append( [0.5 * p, 0.5 * p] )
     
     return bec
+
+def makeBernoulli(p):
+    ber = BinaryMemorylessDistribution()
+    ber.append( [1.0-p, p] )
+    
+    return ber
 
 # private functions for degrade/upgrade
 def _calcKey_degrade(dataLeft, dataCenter): # how much would it cost to merge dataLeft and dataCenter

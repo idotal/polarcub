@@ -107,20 +107,22 @@ def genieEncode():
 def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials): 
     """Run a genie encoder and corresponding decoder, and return frozen set
 
+    Args:
+       length (int): the number of indices in the polar transformed vector
+
+       make_xVectorDistribution (function): return xVectorDistribution, and takes no arguments
+
+       make_codeword (function): make a codeword out of the encodedVector (for example, by doing nothing, or by adding guard bands)
+
+       simulateChannel (function): transfroms a codeword to a recieved word, using the current state of the random number generator
+
+       make_xyVectrorDistribution (function): return xyVectorDistribution, as a function of the received word
+
+       numberOfTrials (int): number of Monte-Carlo simulations
     """
 
     rngSeed = 0
 
-    # useTrellis = True
-    # # useTrellis = False
-    #
-    # xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
-    #
-    # xDistribution.probs.append( [-1.0,-1.0] )
-    # for x in range(2):
-    #     xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
-    #
-    # xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
     xVectorDistribution = make_xVectorDistribution()
 
     frozenSet = set()
@@ -137,26 +139,6 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
         codeword = make_codeword(encodedVector)
 
         receivedWord = simulateChannel(codeword)
-        # receivedWord = []
-        # # TODO: move this somewhere else (this code is duplicated, which is bad!)
-        # for j in range(length):
-        #     x = encodedVector[j]
-        #
-        #     rand = random.random()
-        #     probSum = 0.0
-        #
-        #     for y in range(len(xyDistribution.probs)):
-        #         if probSum + xyDistribution.probXGivenY(x,y) >= rand:
-        #             receivedWord.append(y)
-        #             # print("x = ", x, ", y = ", y, " probXGivenY(x,y) = ", xyDistribution.probXGivenY(x,y), ", rand = ", rand)
-        #             break
-        #         else:
-        #             probSum += xyDistribution.probXGivenY(x,y)
-        #
-        # if useTrellis:
-        #     xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
-        # else:
-        #     xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
         
 
         xyVectorDistribution = make_xyVectrorDistribution(receivedWord)

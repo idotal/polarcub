@@ -1,5 +1,6 @@
 import math
 
+# TODO: change "codeword" to "encodedVector"
 def addDeletionGuardBands(codeword, n, n0, xi):
     """Add deletion guard bands, according to equations (68) and (69) in the deletions paper"""
 

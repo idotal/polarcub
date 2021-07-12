@@ -7,31 +7,6 @@ import PolarEncoderDecoder
 import random
 
 
-def testEncode():
-    uLen = 8
-
-    vecDist = bmvd.BinaryMemorylessVectorDistribution(uLen)
-    frozenSet = set()
-
-    for i in range(uLen):
-        vecDist.probs[i][0] = 0.1
-        vecDist.probs[i][1] = 0.9
-
-    for i in range(uLen):
-        frozenSet.add(i)
-
-    rngSeed = 1
-    encoder = encdec.PolarEncoderDecoder(uLen, frozenSet, rngSeed)
-
-    information = []
-
-
-    encodedVector = encoder.encode(vecDist, information)
-
-    print( "got here" )
-    print( encodedVector )
-
-
 # TODO: move these into BinaryMemorylessDistribution, and perhaps make them class methods
 
 def make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, length):

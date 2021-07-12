@@ -339,3 +339,20 @@ def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionPro
 
     return trellis
 
+def deletionChannelSimulation(codeword, p, seed):
+    N = len(codeword)
+    receivedWord = []
+
+    if seed is not None:
+        random.seed(seed)
+
+
+    for i in range(N):
+        r = random.random()
+
+        if r < p:
+            pass
+        else:
+            receivedWord.append(codeword[i])
+
+        return receivedWord

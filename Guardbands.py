@@ -11,7 +11,7 @@ def addDeletionGuardBands(codeword, n, n0, xi):
 
         ln = math.floor(2**((1-xi)*(n-1)))
 
-        print( " codeword = ", codeword, " n = ", n, " ln =", ln )
+        # print( " codeword = ", codeword, " n = ", n, " ln =", ln )
 
         leftPartOfCodeword = codeword[0:len(codeword)//2]
         rightPartOfCodeword = codeword[len(codeword)//2:len(codeword)]

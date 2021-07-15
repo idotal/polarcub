@@ -43,18 +43,18 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
     def __miusPlusTransform(self, decisionVector=None):
         assert( self.length % 2 == 0 )
 
+        if decisionVector is not None:
+            decisionVectorSubLength = len(decisionVector) // self.numberOfTrellises 
+
         if self.length // 2 > self.numberOfTrellises:
             newCollectionOfBinaryTrellises = CollectionOfBinaryTrellises(self.length//2, self.numberOfTrellises)
             for i in range(self.numberOfTrellises):
-                newCollectionOfBinaryTrellises.trellises[i] = self.trellises[i].minusTransform() if (decisionVector is None) else self.trellises[i].plusTransform(decisionVector)
+                newCollectionOfBinaryTrellises.trellises[i] = self.trellises[i].minusTransform() if (decisionVector is None) else self.trellises[i].plusTransform(decisionVector[i*decisionVectorSubLength:(i+1)*decisionVectorSubLength])
             return newCollectionOfBinaryTrellises
         else:
             assert(self.length // 2 == self.numberOfTrellises)
 
             newBinaryMemorylessVectorDistribution = BinaryMemorylessVectorDistribution.BinaryMemorylessVectorDistribution(self.numberOfTrellises)
-
-            if decisionVector is not None:
-                decisionVectorSubLength = len(decisionVector) // self.numberOfTrellises 
 
             for i in range(self.numberOfTrellises):
                 tempTrellis = self.trellises[i].minusTransform() if (decisionVector is None) else self.trellises[i].plusTransform(decisionVector[i*decisionVectorSubLength:(i+1)*decisionVectorSubLength])

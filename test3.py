@@ -106,7 +106,7 @@ def make_xyVectorDistribution_deletion(deletionProbability, xi, n, n0):
 
     return make_xyVectorDistribution
 
-deletionProbability = 0.1
+deletionProbability = 0.001
 numberOfGenieTrials = 2000
 numberOfEncodingDecodingTrials = 2000
 n = 6

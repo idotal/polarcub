@@ -24,7 +24,10 @@ def addDeletionGuardBands(codeword, n, n0, xi):
         for i in range(ln):
             guardBand.append(0)
 
-        allTogether = leftAfterGuardBandsAdded + guardBand + rightAfterGuardBandsAdded
+        allTogether = []
+        allTogether.extend(leftAfterGuardBandsAdded)
+        allTogether.extend(guardBand)
+        allTogether.extend(rightAfterGuardBandsAdded)
 
         return allTogether
 

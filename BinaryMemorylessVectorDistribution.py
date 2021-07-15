@@ -58,6 +58,8 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
             for x in range(2):
                 marginalizedProbs[x] = self.probs[0][x]/s
         else:
+            # TODO: added to catch an error in genie decoding, remove when finished
+            assert(False)
             for x in range(2):
                 marginalizedProbs[x] = 0.5
 

@@ -107,14 +107,14 @@ def make_xyVectorDistribution_deletion(deletionProbability, xi, n, n0):
     return make_xyVectorDistribution
 
 deletionProbability = 0.001
-numberOfGenieTrials = 1
+numberOfGenieTrials = 1000
 numberOfEncodingDecodingTrials = 2000
-n = 2
+n = 7
 N = 2 ** n
 
 # guardband parameters
 xi = 0.1
-n0 = 1
+n0 = n - 1
 
 upperBoundOnErrorProbability = 0.1
 

@@ -54,8 +54,12 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
         for x in range(2):
             s += self.probs[0][x]
 
-        for x in range(2):
-            marginalizedProbs[x] = self.probs[0][x]/s
+        if (s > 0.0):
+            for x in range(2):
+                marginalizedProbs[x] = self.probs[0][x]/s
+        else:
+            for x in range(2):
+                marginalizedProbs[x] = 0.5
 
         return marginalizedProbs
 

@@ -164,6 +164,9 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
         return fromVertex.outgoingEdges[edgeKey]
 
     def __str__(self):
+        return self.toString()
+
+    def toString(self):
         s = "The input alphabet size is " + str(2) + "\n"
         s += "The number of layers is " + str(self.layers) + "\n"
         s += "The number of vertices in each layers is: \n"
@@ -344,7 +347,7 @@ def deletionChannelSimulation(codeword, p, seed):
     N = len(codeword)
     receivedWord = []
 
-    print("deletionChannelSimulation, codeword = ", codeword)
+    # print("deletionChannelSimulation, codeword = ", codeword)
     if seed is not None:
         random.seed(seed)
 
@@ -356,6 +359,6 @@ def deletionChannelSimulation(codeword, p, seed):
         else:
             receivedWord.append(codeword[i])
 
-    print("deletionChannelSimulation, receivedWord = ", receivedWord)
+    # print("deletionChannelSimulation, receivedWord = ", receivedWord)
 
     return receivedWord

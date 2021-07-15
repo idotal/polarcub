@@ -53,7 +53,7 @@ def trimZerosAtEdges(receivedWord):
 
         firstOneIndex = -1
 
-        print( receivedWord )
+        # print("trimZerosAtEdges, receivedWord = ", receivedWord )
         for i in range(len(receivedWord)):
             if receivedWord[i] == 1:
                 firstOneIndex = i
@@ -72,5 +72,7 @@ def trimZerosAtEdges(receivedWord):
 
         for i in range(firstOneIndex, lastOneIndex+1):
             trimmedReceivedWord.append(receivedWord[i])
+
+        # print("trimZerosAtEdges, trimmedReceivedWord = ", trimmedReceivedWord )
 
         return trimmedReceivedWord

@@ -34,6 +34,16 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
     def __len__(self):
         return self.length
 
+    def __str__(self):
+        s = "This collection of Binary trellis contains " + str(self.numberOfTrellises) + " trellises. Each trellis has input length " + str(self.trellisLength) + ". These trellises are\n"
+
+        for trellis in self.trellises:
+            s += "***\n"
+            s += trellis.toString()
+
+        s += "***\n"
+        return s
+
     def minusTransform(self):
         return self.__miusPlusTransform()
 

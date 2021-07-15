@@ -85,7 +85,6 @@ class PolarEncoderDecoder():
 
         assert( len(xVectorDistribution) == len(xyVectorDistribution) == self.length )
 
-
         (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution)
 
         assert( next_uIndex == len(encodedVector) == self.length )
@@ -126,6 +125,8 @@ class PolarEncoderDecoder():
         self.geniePreSteps(simulationSeed)
 
         assert( len(xVectorDistribution) == self.length )
+
+        # print(xyVectorDistribution)
 
         (decodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution, marginalizedUProbs)
 

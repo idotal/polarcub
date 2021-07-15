@@ -24,13 +24,7 @@ def addDeletionGuardBands(codeword, n, n0, xi):
         for i in range(ln):
             guardBand.append(0)
 
-        # allTogether = leftAfterGuardBandsAdded + guardBand + rightAfterGuardBandsAdded
-        allTogether = []
-
-        allTogether.append(leftAfterGuardBandsAdded)
-        allTogether.append(guardBand)
-        allTogether.append(rightAfterGuardBandsAdded)
-        
+        allTogether = leftAfterGuardBandsAdded + guardBand + rightAfterGuardBandsAdded
 
         return allTogether
 
@@ -56,6 +50,7 @@ def trimZerosAtEdges(receivedWord):
 
         firstOneIndex = -1
 
+        print( receivedWord )
         for i in range(len(receivedWord)):
             if receivedWord[i] == 1:
                 firstOneIndex = i

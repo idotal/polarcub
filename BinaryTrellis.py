@@ -344,9 +344,9 @@ def deletionChannelSimulation(codeword, p, seed):
     N = len(codeword)
     receivedWord = []
 
+    print("deletionChannelSimulation, codeword = ", codeword)
     if seed is not None:
         random.seed(seed)
-
 
     for i in range(N):
         r = random.random()
@@ -356,4 +356,6 @@ def deletionChannelSimulation(codeword, p, seed):
         else:
             receivedWord.append(codeword[i])
 
-        return receivedWord
+    print("deletionChannelSimulation, receivedWord = ", receivedWord)
+
+    return receivedWord

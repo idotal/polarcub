@@ -1,8 +1,11 @@
 #! /usr/bin/env python3
 
 import BinaryTrellis
+import CollectionOfBinaryTrellises
 import random
 import Guardbands
+import PolarEncoderDecoder
+import BinaryMemorylessDistribution
 
 # def deletionChannelSimulation(codeword, p, seed, trimmedZerosAtEdges=False):
 #     N = len(codeword)
@@ -86,20 +89,20 @@ def make_xVectorDistribuiton_deletion_uniform(length):
 
 def make_codeword_addDeletionGuardBands(xi, n, n0):
     def make_codeword(encodedVector):
-        return addDeletionGuardBands(encodedVector, n, n0, xi)
+        return Guardbands.addDeletionGuardBands(encodedVector, n, n0, xi)
 
     return make_codeword
 
 def make_simulateChannel_deletion(p, seed=None):
     def simulateChannel(codeword):
-        return deletionChannelSimulation(codeword, p, seed)
+        return BinaryTrellis.deletionChannelSimulation(codeword, p, seed)
 
     return simulateChannel
 
 def make_xyVectorDistribution_deletion(deletionProbability, xi, n, n0):
     codewordLength = 2 ** n
     def make_xyVectorDistribution(receivedWord):
-        return CollectionOfBinaryTrellises.buildCollection(receivedWord, deletionProbability, xi, n, n0):
+        return CollectionOfBinaryTrellises.buildCollectionOfBinaryTrellises_uniformInput_deletion(receivedWord, deletionProbability, xi, n, n0)
 
     return make_xyVectorDistribution
 
@@ -118,7 +121,7 @@ upperBoundOnErrorProbability = 0.1
 make_xVectorDistribuiton = make_xVectorDistribuiton_deletion_uniform(N)
 make_codeword = make_codeword_addDeletionGuardBands(xi, n, n0)
 
-simulateChannel = make_simulateChannel_deletion(p)
+simulateChannel = make_simulateChannel_deletion(deletionProbability)
 make_xyVectorDistribution = make_xyVectorDistribution_deletion(deletionProbability, xi, n, n0)
 
 frozenSet = PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfGenieTrials, upperBoundOnErrorProbability)

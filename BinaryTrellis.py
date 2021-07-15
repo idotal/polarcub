@@ -1,5 +1,6 @@
 import numpy as np
 import VectorDistribution
+import random
 
 class Vertex():
     def __init__(self, stateId = -1, verticalPosInLayer = -1, layer = -1, vertexProb = -1.0):

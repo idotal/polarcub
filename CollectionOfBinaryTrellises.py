@@ -1,12 +1,14 @@
+import VectorDistribution
 import BinaryTrellis
 import BinaryMemorylessVectorDistribution
+import Guardbands
 
 class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
     def __init__(self, length, numberOfTrellises):
         """Initialize a collection of empty trellises
 
         Args:
-            length (int): the number of inputs (not including the guard bands). That is, 2**n, where n is the number of polar transforms. Thus, the number of layers is length + 1.
+            length (int): the number of inputs (not including the guard bands). That is, 2**n, where n is the number of polar transforms.
 
             numberOfTrellises (int): the number of trellises in the collection, which must be a power of 2.
 
@@ -26,7 +28,7 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
 
     
         for i in range(numberOfTrellises):
-            newTrellis = BinaryTrellis(trellisLength)
+            newTrellis = BinaryTrellis.BinaryTrellis(self.trellisLength)
             self.trellises.append(newTrellis)
 
     def __len__(self):
@@ -42,17 +44,21 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
         assert( self.length % 2 == 0 )
 
         if self.length // 2 > self.numberOfTrellises:
-            newCollectionOfBinaryTrellises = CollectionOfBinaryTrellises(self.lenth//2, self.numberOfTrellises)
-            for i in range(self.numberOfTrellies):
-                newCollectionOfBinaryTrellises.trellises[i] = self.trellises[i].minusTransform() if decisionVector == None else self.trellises[i].plusTransform(decisionVector)
+            newCollectionOfBinaryTrellises = CollectionOfBinaryTrellises(self.length//2, self.numberOfTrellises)
+            for i in range(self.numberOfTrellises):
+                newCollectionOfBinaryTrellises.trellises[i] = self.trellises[i].minusTransform() if (decisionVector is None) else self.trellises[i].plusTransform(decisionVector)
             return newCollectionOfBinaryTrellises
         else:
             assert(self.length // 2 == self.numberOfTrellises)
 
             newBinaryMemorylessVectorDistribution = BinaryMemorylessVectorDistribution.BinaryMemorylessVectorDistribution(self.numberOfTrellises)
-            for i in range(self.numberOfTrellies):
-                tempTrellis = self.trellises[i].minusTransform() if decisionVector == None else self.trellises[i].plusTransform(decisionVector)
-                marginzalizedProbs = tempTrellis.calcMarginalizedProbabilities(normalize=False)
+
+            if decisionVector is not None:
+                decisionVectorSubLength = len(decisionVector) // self.numberOfTrellises 
+
+            for i in range(self.numberOfTrellises):
+                tempTrellis = self.trellises[i].minusTransform() if (decisionVector is None) else self.trellises[i].plusTransform(decisionVector[i*decisionVectorSubLength:(i+1)*decisionVectorSubLength])
+                marginalizedProbs = tempTrellis.calcMarginalizedProbabilities(normalize=False)
 
                 for x in range(2):
                     newBinaryMemorylessVectorDistribution.probs[i][x] = marginalizedProbs[x]
@@ -70,13 +76,29 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
 
         for i in range(self.numberOfTrellises):
             trellisNormalization = self.trellises[i].calcNormalizationVector()
+            normalization.append(trellisNormalization)
 
         return normalization
 
             
     def normalize(self, normalization):
-        assert( len(normalization) == slef.numberOfTrellies)
+        assert( len(normalization) == self.numberOfTrellises)
 
         for i in range(self.numberOfTrellises):
             self.trellises[i].normalize(normalization[i])
 
+def buildCollectionOfBinaryTrellises_uniformInput_deletion(receivedWord, deletionProb, xi, n, n0):
+    trimmedSubwords = Guardbands.removeDeletionGuardBands(receivedWord, n, n0)
+
+    trellisLength = 2 ** n0
+    numberOfTrellises = 2 ** (n-n0)
+    totalLength = 2 ** n
+
+    collection = CollectionOfBinaryTrellises(totalLength, numberOfTrellises)
+    collection.trellises = []
+
+    for subword in trimmedSubwords:
+        tempTrellis = BinaryTrellis.buildTrellis_uniformInput_deletion(subword, trellisLength, deletionProb, trimmedZerosAtEdges=True)
+        collection.trellises.append(tempTrellis) 
+
+    return collection

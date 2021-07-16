@@ -106,10 +106,10 @@ def make_xyVectorDistribution_deletion(deletionProbability, xi, n, n0):
 
     return make_xyVectorDistribution
 
-deletionProbability = 0.001
+deletionProbability = 0.1
 numberOfGenieTrials = 1000
-numberOfEncodingDecodingTrials = 2000
-n = 2
+numberOfEncodingDecodingTrials = 1000
+n = 4
 N = 2 ** n
 
 # guardband parameters
@@ -125,4 +125,4 @@ simulateChannel = make_simulateChannel_deletion(deletionProbability)
 make_xyVectorDistribution = make_xyVectorDistribution_deletion(deletionProbability, xi, n, n0)
 
 frozenSet = PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfGenieTrials, upperBoundOnErrorProbability)
-# PolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfEncodingDecodingTrials, frozenSet)
+PolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfEncodingDecodingTrials, frozenSet)

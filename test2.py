@@ -83,4 +83,6 @@ make_xyVectorDistribution = make_xyVectorDistribution_fromBinaryMemorylessDistri
 
 # PolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet)
 
-PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, L, upperBoundOnErrorProbability)
+# trustXYProbs = False
+trustXYProbs = True
+PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, L, upperBoundOnErrorProbability, trustXYProbs)

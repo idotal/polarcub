@@ -39,7 +39,6 @@ class PolarEncoderDecoder():
             for i in range(self.length):
                 self.randomlyGeneratedNumbers[i] = 1.0
 
-    # returns encodedVector
     def encode(self, xVectorDistribution, information):
         """Encode k information bits according to a-priori input distribution
 
@@ -64,7 +63,6 @@ class PolarEncoderDecoder():
 
         return encodedVector
 
-    # returns (encodedVector, information)
     def decode(self, xVectorDistribution, xyVectorDistribution):
         """Decode k information bits according to a-priori input distribution and a-posteriori input distribution
 
@@ -105,7 +103,7 @@ class PolarEncoderDecoder():
         self.rngSeed = self.backupSeed 
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
-    def genieSingleDecodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, simulationSeed):
+    def genieSingleDecodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, simulationSeed, trustXYProbs):
         """Pick up statistics of a single decoding run
         Args:
             xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=0) and P(X=1)
@@ -113,8 +111,10 @@ class PolarEncoderDecoder():
             xyVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-posteriori entries for P(X=0) and P(X=1). That is, entry i contains P(X=0,Y=y_i) and P(X=1,Y=y_i).
             simulationSeed (int): The seed used to randomly pick the value of the u_i
 
+            trustXYProbs (bool): Do we trust the probabilities of U_i=0 and U_i = 1 given past U and all Y (we usually should), or don't we (in case we have guard bands, which can be parsed wrong, and then result in garbage probs).
+
         Returns:
-            (decodedVector, Pe, H): a triplet of arrays. The first array is the codeword we have produced. Entry i of the second array is the probability of error, min{P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}), P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})}. Entry i of the third array is the entropy, -P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})) - P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}))
+            (decodedVector, Pe, H): a triplet of arrays. The first array is the codeword we have produced. If we trust the probabilities, entry i of the second array is the probability of error, min{P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}), P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})}. Entry i of the third array is the entropy, -P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=0|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})) - P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1}) * log_2(P(U_i=1|U_0^{i-1} = u_0^{i-1}, Y_0^{N-1} = y_0^{N-1})). If we don't trust the probabilities, entry i of the second array is 1.0, and the third array is empty.
         """
 
         marginalizedUProbs = []
@@ -138,9 +138,27 @@ class PolarEncoderDecoder():
         Pevec = []
         Hvec = []
 
-        for probPair in marginalizedUProbs:
-            Pevec.append( min( probPair[0], probPair[1]) )
-            Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
+        if trustXYProbs == True:
+            for probPair in marginalizedUProbs:
+                Pevec.append( min( probPair[0], probPair[1]) )
+                Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
+        else:
+            Uvec = polarTransformOfBits( decodedVector )
+            # print( "decodedVector = ", decodedVector, ", Uvec = ", Uvec )
+            i = 0
+            for probPair in marginalizedUProbs:
+                decision = Uvec[i]
+                # print( i, decision, probPair)
+                i += 1
+                if probPair[decision] > probPair[1 - decision]:
+                    Pevec.append( 0.0 )
+                elif probPair[decision] == probPair[1 - decision]:
+                    Pevec.append( 0.5 )
+                else: 
+                    Pevec.append( 1.0 )
+
+                # Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
+            
 
         # return things to the way they were
         self.geniePostSteps()
@@ -309,6 +327,7 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
 
     random.seed(1)
 
+    # TODO: change channel seed between trials!!!
     for t in range(numberOfTrials):
         information = []
         for i in range( encDec.k ):
@@ -328,12 +347,12 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
         for i in range( encDec.k ):
             if information[i] != decodedInformation[i]:
                 misdecodedWords += 1
-                print( t, ") error, transmitted information: ", information, ", decoded information: ", decodedInformation, ", transmitted codeword: ", codeword, ", received word: ", receivedWord )
+                # print( t, ") error, transmitted information: ", information, ", decoded information: ", decodedInformation, ", transmitted codeword: ", codeword, ", received word: ", receivedWord )
                 break
 
     print( "Error probability = ", misdecodedWords, "/", numberOfTrials, " = ", misdecodedWords/numberOfTrials )
 
-def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet):
+def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet, trustXYProbs=True):
     """Run a genie encoder and corresponding decoder, and return frozen set
 
     Args:
@@ -348,6 +367,10 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
        make_xyVectrorDistribution (function): return xyVectorDistribution, as a function of the received word
 
        numberOfTrials (int): number of Monte-Carlo simulations
+
+       errorUpperBoundForFrozenSet (float): choose a frozen set that will result in decoding error not more than this varialble
+
+       trustXYProbs (bool): Do we trust the probabilities of U_i=0 and U_i = 1 given past U and all Y (we usually should), or don't we (in case we have guard bands, which can be parsed wrong, and then result in garbage probs).
     """
 
     rngSeed = 0
@@ -367,11 +390,15 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
 
         codeword = make_codeword(encodedVector)
 
+        
+        rand.seed(rngSeed + 1000)
         receivedWord = simulateChannel(codeword)
+
+        # print("codeword = ", codeword, ", receivedWord = ", receivedWord)
 
         xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
 
-        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, rngSeed)
+        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, rngSeed, trustXYProbs)
 
         if  TVvec is None:
             TVvec = TVvecTemp
@@ -384,7 +411,8 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
                 TVvec[i] += TVvecTemp[i]
                 Pevec[i] += PevecTemp[i]
                 HEncvec[i] += HencvecTemp[i]
-                HDecvec[i] += HdecvecTemp[i]
+                if trustXYProbs:
+                    HDecvec[i] += HdecvecTemp[i]
 
     HEncsum = 0.0
     HDecsum = 0.0
@@ -392,16 +420,19 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
         TVvec[i] /= numberOfTrials
         Pevec[i] /= numberOfTrials
         HEncvec[i] /= numberOfTrials
-        HDecvec[i] /= numberOfTrials
         HEncsum += HEncvec[i]
-        HDecsum += HDecvec[i]
+        if trustXYProbs:
+            HDecvec[i] /= numberOfTrials
+            HDecsum += HDecvec[i]
 
     print( "TVVec = ", TVvec )
     print( "pevec = ", Pevec )
     print( "HEncvec = ", HEncvec )
-    print( "HDecvec = ", HDecvec )
+    if trustXYProbs:
+        print( "HDecvec = ", HDecvec )
     print( "Normalized HEncsum = ",  HEncsum /len(HEncvec) )
-    print( "Normalized HDecsum = ", HDecsum /len(HDecvec) )
+    if trustXYProbs:
+        print( "Normalized HDecsum = ", HDecsum /len(HDecvec) )
 
     TVPlusPeVec = []
 
@@ -432,3 +463,28 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
     print( 1.0 - len(frozenSet) / len(HEncvec) )
 
     return frozenSet
+
+def polarTransformOfBits( xvec ):
+    # print("xvec =", xvec)
+    if len(xvec) == 1:
+        return xvec
+    else:
+        assert( len(xvec) % 2 == 0 )
+
+        vfirst = []
+        vsecond = []
+        for i in range((len(xvec) // 2)):
+            vfirst.append( (xvec[2*i] + xvec[2*i+1]) % 2 )
+            vsecond.append( xvec[2*i+1] )
+
+        ufirst = polarTransformOfBits(vfirst)
+        usecond = polarTransformOfBits(vsecond)
+
+        transformed = []
+
+        transformed.extend(ufirst)
+        transformed.extend(usecond)
+
+        # print( "transformed = ", transformed )
+        return transformed
+

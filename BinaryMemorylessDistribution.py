@@ -655,24 +655,3 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
 
     frozenSet = PolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
     return frozenSet   
-
-    # frozenSet = set()
-    #
-    # N = 1 << n
-    #
-    # # TODO: This is sub-optimal. Change this to a calculation similar to what we do with the genie.
-    # # TODO: Actually, factor common code out into a new function
-    # if xDistribution is not None:
-    #     delta =  upperBoundOnErrorProbability / (2 * N)
-    #     for i in 2 ** n:
-    #         if xyDists[m][i].errorProb() > delta or xDists[m][i].totalVariation() > delta:
-    #             frozenSet.add(i)
-    #
-    # else:
-    #     delta =  upperBoundOnErrorProbability / N
-    #     for i in range(2 ** n):
-    #         if xyDists[m][i].errorProb() > delta:
-    #             frozenSet.add(i)
-    #
-    # return frozenSet
-

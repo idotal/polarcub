@@ -62,7 +62,7 @@ def make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution):
 
 p = 0.11
 L = 100
-n = 6
+n = 7
 N = 2 ** n
 
 upperBoundOnErrorProbability = 0.1
@@ -72,17 +72,17 @@ xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
 
 frozenSet = BinaryMemorylessDistribution.calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
 
-print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
+# print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
 
-numberOfTrials = 2000
+numberOfTrials = 4000
 
 make_xVectorDistribuiton = make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, N)
 make_codeword = make_codeword_noprocessing
 simulateChannel = simulateChannel_fromBinaryMemorylessDistribution(xyDistribution)
 make_xyVectorDistribution = make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution)
 
-# PolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet)
+PolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet)
 
-# trustXYProbs = False
-trustXYProbs = True
-PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, upperBoundOnErrorProbability, trustXYProbs)
+# # trustXYProbs = False
+# trustXYProbs = True
+# PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, upperBoundOnErrorProbability, trustXYProbs)

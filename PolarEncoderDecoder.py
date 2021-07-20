@@ -327,7 +327,7 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
 
     random.seed(1)
 
-    # TODO: change channel seed between trials!!!
+    # Note that we set a random seed, which is in charge of both setting the information bits as well as the channel output.
     for t in range(numberOfTrials):
         information = []
         for i in range( encDec.k ):
@@ -470,7 +470,7 @@ def frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet):
 
     sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
 
-    print( sortedIndices )
+    # print( sortedIndices )
 
     errorSum = 0.0
     indexInSortedIndicesArray = -1
@@ -488,7 +488,7 @@ def frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet):
         i = sortedIndices[j]
         frozenSet.add(i)
 
-    print( frozenSet )
-    print( 1.0 - len(frozenSet) / len(TVPlusPeVec) )
+    print( "frozen set =", frozenSet )
+    print( "code rate =", 1.0 - len(frozenSet) / len(TVPlusPeVec) )
 
     return frozenSet

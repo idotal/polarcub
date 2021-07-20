@@ -4,6 +4,7 @@ import LinkedListHeap
 import itertools
 import BinaryMemorylessVectorDistribution
 import BinaryTrellis
+import PolarEncoderDecoder
 
 # from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
 # from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
@@ -640,23 +641,38 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
             xyDists[m].append(dist.minusTransform().degrade(L))
             xyDists[m].append(dist.plusTransform().degrade(L))
 
-    frozenSet = set()
-
     N = 1 << n
+    TVvec = []
+    Pevec = []
 
-    # TODO: This is sub-optimal. Change this to a calculation similar to what we do with the genie.
-    # TODO: Actually, factor common code out into a new function
-    if xDistribution is not None:
-        delta =  upperBoundOnErrorProbability / (2 * N)
-        for i in 2 ** n:
-            if xyDists[m][i].errorProb() > delta or xDists[m][i].totalVariation() > delta:
-                frozenSet.add(i)
+    for i in range(N):
+        if xDistribution is not None:
+            TVvec.append(xDists[n][i].totalVariation())
+        else:
+            TVvec.append(0.0)
 
-    else:
-        delta =  upperBoundOnErrorProbability / N
-        for i in range(2 ** n):
-            if xyDists[m][i].errorProb() > delta:
-                frozenSet.add(i)
+        Pevec.append(xyDists[n][i].errorProb())
 
-    return frozenSet
+    frozenSet = PolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
+    return frozenSet   
+
+    # frozenSet = set()
+    #
+    # N = 1 << n
+    #
+    # # TODO: This is sub-optimal. Change this to a calculation similar to what we do with the genie.
+    # # TODO: Actually, factor common code out into a new function
+    # if xDistribution is not None:
+    #     delta =  upperBoundOnErrorProbability / (2 * N)
+    #     for i in 2 ** n:
+    #         if xyDists[m][i].errorProb() > delta or xDists[m][i].totalVariation() > delta:
+    #             frozenSet.add(i)
+    #
+    # else:
+    #     delta =  upperBoundOnErrorProbability / N
+    #     for i in range(2 ** n):
+    #         if xyDists[m][i].errorProb() > delta:
+    #             frozenSet.add(i)
+    #
+    # return frozenSet
 

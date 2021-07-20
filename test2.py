@@ -61,7 +61,7 @@ def make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution):
     return make_xyVectrorDistribution
 
 p = 0.11
-L = 1000
+L = 100
 n = 6
 N = 2 ** n
 
@@ -85,4 +85,4 @@ make_xyVectorDistribution = make_xyVectorDistribution_fromBinaryMemorylessDistri
 
 # trustXYProbs = False
 trustXYProbs = True
-PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, L, upperBoundOnErrorProbability, trustXYProbs)
+PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, upperBoundOnErrorProbability, trustXYProbs)

@@ -434,34 +434,7 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
     if trustXYProbs:
         print( "Normalized HDecsum = ", HDecsum /len(HDecvec) )
 
-    TVPlusPeVec = []
-
-    for i in range(len(TVvec)):
-        TVPlusPeVec.append(TVvec[i] + Pevec[i])
-
-    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
-
-    print( sortedIndices )
-
-    errorSum = 0.0
-    indexInSortedIndicesArray = -1
-    frozenSet = set()
-
-    while errorSum < errorUpperBoundForFrozenSet and indexInSortedIndicesArray + 1 < len(TVPlusPeVec):
-        i = sortedIndices[indexInSortedIndicesArray + 1]
-        if TVPlusPeVec[i] + errorSum <= errorUpperBoundForFrozenSet:
-            errorSum += TVPlusPeVec[i]
-            indexInSortedIndicesArray += 1
-        else:
-            break
-
-    for j in range(indexInSortedIndicesArray+1,  len(TVPlusPeVec)):
-        i = sortedIndices[j]
-        frozenSet.add(i)
-
-    print( frozenSet )
-    print( 1.0 - len(frozenSet) / len(HEncvec) )
-
+    frozenSet = frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet)
     return frozenSet
 
 def polarTransformOfBits( xvec ):
@@ -488,3 +461,34 @@ def polarTransformOfBits( xvec ):
         # print( "transformed = ", transformed )
         return transformed
 
+def frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet):
+
+    TVPlusPeVec = []
+
+    for i in range(len(TVvec)):
+        TVPlusPeVec.append(TVvec[i] + Pevec[i])
+
+    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
+
+    print( sortedIndices )
+
+    errorSum = 0.0
+    indexInSortedIndicesArray = -1
+    frozenSet = set()
+
+    while errorSum < errorUpperBoundForFrozenSet and indexInSortedIndicesArray + 1 < len(TVPlusPeVec):
+        i = sortedIndices[indexInSortedIndicesArray + 1]
+        if TVPlusPeVec[i] + errorSum <= errorUpperBoundForFrozenSet:
+            errorSum += TVPlusPeVec[i]
+            indexInSortedIndicesArray += 1
+        else:
+            break
+
+    for j in range(indexInSortedIndicesArray+1,  len(TVPlusPeVec)):
+        i = sortedIndices[j]
+        frozenSet.add(i)
+
+    print( frozenSet )
+    print( 1.0 - len(frozenSet) / len(TVPlusPeVec) )
+
+    return frozenSet

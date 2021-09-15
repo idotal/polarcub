@@ -1,7 +1,7 @@
 import VectorDistribution
-import BinaryTrellis
-import BinaryMemorylessVectorDistribution
 import Guardbands
+from VectorDistributions import BinaryTrellis
+from VectorDistributions import BinaryMemorylessVectorDistribution
 
 class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
     def __init__(self, length, numberOfTrellises):
@@ -97,7 +97,7 @@ class CollectionOfBinaryTrellises(VectorDistribution.VectorDistribution):
         for i in range(self.numberOfTrellises):
             self.trellises[i].normalize(normalization[i])
 
-def buildCollectionOfBinaryTrellises_uniformInput_deletion(receivedWord, deletionProb, xi, n, n0):
+def buildCollectionOfBinaryTrellises_uniformInput_deletion(receivedWord, deletionProb, xi, n, n0, numberOfOnesToAddAtBothEndsOfGuardbands, verbosity=0):
     trimmedSubwords = Guardbands.removeDeletionGuardBands(receivedWord, n, n0)
 
     trellisLength = 2 ** n0
@@ -107,8 +107,14 @@ def buildCollectionOfBinaryTrellises_uniformInput_deletion(receivedWord, deletio
     collection = CollectionOfBinaryTrellises(totalLength, numberOfTrellises)
     collection.trellises = []
 
+    trimmedZerosAtEdges=True
+    if verbosity > 0:
+        print( "trimmed subwords" )
     for subword in trimmedSubwords:
-        tempTrellis = BinaryTrellis.buildTrellis_uniformInput_deletion(subword, trellisLength, deletionProb, trimmedZerosAtEdges=True)
+        if verbosity > 0:
+            print( subword )
+
+        tempTrellis = BinaryTrellis.buildTrellis_uniformInput_deletion(subword, trellisLength, deletionProb, trimmedZerosAtEdges, numberOfOnesToAddAtBothEndsOfGuardbands)
         collection.trellises.append(tempTrellis) 
 
     return collection

@@ -1,22 +1,22 @@
 import numpy as np
-import random as rand
-import BinaryMemorylessDistribution
+from ScalarDistributions import BinaryMemorylessDistribution
 import random
 from enum import Enum
+
+import sys
 
 class uIndexType(Enum):
     frozen = 0
     information = 1
 
 class PolarEncoderDecoder():
-    def __init__(self, length, frozenSet, rngSeed): # length is the length of the U vector, if rngSeed is set to -1, then we freeze all frozen bits to zero
-        self.rngSeed = rngSeed
+    def __init__(self, length, frozenSet, commonRandomnessSeed): # length is the length of the U vector, if rngSeed is set to -1, then we freeze all frozen bits to zero
+        self.commonRandomnessSeed = commonRandomnessSeed
         self.frozenSet = frozenSet
         self.length = length
         
         self.frozenOrInformation = np.empty(length, uIndexType)
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
-
 
     def initializeFrozenOrInformationAndRandomlyGeneratedNumbers(self):
         self.k = 0
@@ -30,11 +30,12 @@ class PolarEncoderDecoder():
         self.randomlyGeneratedNumbers = np.empty(self.length)
         self.randomlyGeneratedNumbers[:] = np.nan
 
-        if self.rngSeed != -1:
-            rand.seed(self.rngSeed)
+        commonRandomnessRNG = random.Random()
+        if self.commonRandomnessSeed != -1:
+            commonRandomnessRNG.seed(self.commonRandomnessSeed)
 
             for i in range(self.length):
-                self.randomlyGeneratedNumbers[i] = rand.random()
+                self.randomlyGeneratedNumbers[i] = commonRandomnessRNG.random()
         else:
             for i in range(self.length):
                 self.randomlyGeneratedNumbers[i] = 1.0
@@ -90,26 +91,26 @@ class PolarEncoderDecoder():
 
         return (encodedVector, information)
 
-    def geniePreSteps(self, simulationSeed):
+    def geniePreSteps(self, genieSingleRunSeed):
         self.backupFrozenSet = self.frozenSet
-        self.backupSeed = self.rngSeed
+        self.backupCommonRandomnessSeed = self.commonRandomnessSeed
 
         self.frozenSet = { i for i in range(self.length) }
-        self.rngSeed = simulationSeed
+        self.commonRandomnessSeed = genieSingleRunSeed
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
     def geniePostSteps(self):
         self.frozenSet = self.backupFrozenSet 
-        self.rngSeed = self.backupSeed 
+        self.commonRandomnessSeed = self.backupCommonRandomnessSeed 
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
-    def genieSingleDecodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, simulationSeed, trustXYProbs):
+    def genieSingleDecodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, genieSingleRunSeed, trustXYProbs):
         """Pick up statistics of a single decoding run
         Args:
             xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=0) and P(X=1)
 
             xyVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-posteriori entries for P(X=0) and P(X=1). That is, entry i contains P(X=0,Y=y_i) and P(X=1,Y=y_i).
-            simulationSeed (int): The seed used to randomly pick the value of the u_i
+            genieSingleRunSeed (int): The seed used to randomly pick the common randomness for this genie run
 
             trustXYProbs (bool): Do we trust the probabilities of U_i=0 and U_i = 1 given past U and all Y (we usually should), or don't we (in case we have guard bands, which can be parsed wrong, and then result in garbage probs).
 
@@ -122,7 +123,7 @@ class PolarEncoderDecoder():
         informationVectorIndex = 0
         information = []
 
-        self.geniePreSteps(simulationSeed)
+        self.geniePreSteps(genieSingleRunSeed)
 
         assert( len(xVectorDistribution) == self.length )
 
@@ -165,12 +166,12 @@ class PolarEncoderDecoder():
 
         return (decodedVector, Pevec, Hvec)
 
-    def genieSingleEncodeSimulatioan(self, xVectorDistribution, simulationSeed):
+    def genieSingleEncodeSimulatioan(self, xVectorDistribution, genieSingleRunSeed):
         """Pick up statistics of a single encoding run
         Args:
             xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=0) and P(X=1)
 
-            simulationSeed (int): The seed used to randomly pick the value of the u_i
+            genieSingleRunSeed (int): The seed used to randomly pick the common randomness for this genie run
 
         Returns:
             (encodedVector, TVvec, H): a triplet of arrays. The first array is the codeword we have produced. Entry i of the second array is the the total variation |P(U_i=0|U_0^{i-1} = u_0^{i-1})-P(U_i=1|U_0^{i-1} = u_0^{i-1})|. Entry i of the third array is the entropy, -P(U_i=0|U_0^{i-1} = u_0^{i-1} * log_2(P(U_i=0|U_0^{i-1} = u_0^{i-1}) - P(U_i=1|U_0^{i-1} = u_0^{i-1} * log_2(P(U_i=1|U_0^{i-1} = u_0^{i-1})
@@ -181,7 +182,7 @@ class PolarEncoderDecoder():
         informationVectorIndex = 0
         information = []
 
-        self.geniePreSteps(simulationSeed)
+        self.geniePreSteps(genieSingleRunSeed)
 
         assert( len(xVectorDistribution) == self.length )
 
@@ -302,7 +303,7 @@ class PolarEncoderDecoder():
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
 
-def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, codeRngSeed=1):
+def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed, randomInformationSeed, verbosity=0):
     """Run a polar encoder and a corresponding decoder (SC, not SCL)
 
     Args:
@@ -317,21 +318,27 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
        make_xyVectrorDistribution (function): return xyVectorDistribution, as a function of the received word
 
        frozenSet (set): the set of (dynamically) frozen indices
+
+       commonRandomnessSeed (int): the seed used for defining the encoder/decoder common randomness
+
+       randomInformationSeed (int): the seed used to create the random information to be encoded
+
     """
 
     misdecodedWords = 0
 
     xVectorDistribution = make_xVectorDistribution()
 
-    encDec = PolarEncoderDecoder(length, frozenSet, codeRngSeed)
+    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
 
-    random.seed(1)
+    informationRNG = random.Random()
+    informationRNG.seed(randomInformationSeed)
 
     # Note that we set a random seed, which is in charge of both setting the information bits as well as the channel output.
     for t in range(numberOfTrials):
         information = []
         for i in range( encDec.k ):
-            inf = 0 if random.random() < 0.5 else 1
+            inf = 0 if informationRNG.random() < 0.5 else 1
             information.append(inf)
 
         encodedVector = encDec.encode(xVectorDistribution, information)
@@ -340,6 +347,10 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
 
         receivedWord = simulateChannel(codeword)
 
+        # if t == 844:
+        #     xyVectorDistribution = make_xyVectrorDistribution(receivedWord, verbosity=1)
+        # else:
+        #     xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
         xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
 
         (decodedVector, decodedInformation) = encDec.decode(xVectorDistribution, xyVectorDistribution)
@@ -347,12 +358,19 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
         for i in range( encDec.k ):
             if information[i] != decodedInformation[i]:
                 misdecodedWords += 1
-                # print( t, ") error, transmitted information: ", information, ", decoded information: ", decodedInformation, ", transmitted codeword: ", codeword, ", received word: ", receivedWord )
+                if verbosity > 0:
+                    s = str(t) + ") error, transmitted inforamtion:\n" + str(information)
+                    s += "\ndecoded information:\n" + str(decodedInformation)
+                    s += "\nencoded vector before guard bands added:\n" + str(encodedVector)
+                    s += "\ncodeword:\n" + str(codeword)
+                    s += "\nreceived word:\n" + str(receivedWord)
+                    print(s)
+                    # print( t, ") error, transmitted information: ", information", ", decoded information: ", decodedInformation, ", transmitted codeword: ", codeword, ", received word: ", receivedWord )
                 break
 
     print( "Error probability = ", misdecodedWords, "/", numberOfTrials, " = ", misdecodedWords/numberOfTrials )
 
-def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet, trustXYProbs=True):
+def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet, genieSeed, trustXYProbs=True, filename=None):
     """Run a genie encoder and corresponding decoder, and return frozen set
 
     Args:
@@ -370,10 +388,12 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
 
        errorUpperBoundForFrozenSet (float): choose a frozen set that will result in decoding error not more than this varialble
 
+       genieSeed (int): the seed used by the genie to have different encoding/decoding common randomness in each run
+
        trustXYProbs (bool): Do we trust the probabilities of U_i=0 and U_i = 1 given past U and all Y (we usually should), or don't we (in case we have guard bands, which can be parsed wrong, and then result in garbage probs).
     """
 
-    rngSeed = 0
+    commonRandomnessSeed = 0 # doesn't matter, as this common randomness will not be used (will be replaced by a different seed by the genie)
 
     xVectorDistribution = make_xVectorDistribution()
 
@@ -381,24 +401,26 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
     TVvec = None
     HEncvec = None
     HDecvec = None
+    codewordLength = 0
 
-    encDec = PolarEncoderDecoder(length, frozenSet, rngSeed)
+    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
+    genieSingleRunSeedRNG = random.Random()
+    genieSingleRunSeedRNG.seed(genieSeed)
 
-    # DO *NOT* SET SEED TO 0, AS THIS TAKES THE SYSTEM CLOCK AS A SEED!!!
-    for rngSeed in range(1, numberOfTrials+1):
-        (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, rngSeed)
+    for trialNumber in range(numberOfTrials):
+        genieSingleRunSeed = genieSingleRunSeedRNG.randint(1, 1000000)
+        
+        (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, genieSingleRunSeed)
 
         codeword = make_codeword(encodedVector)
 
-        
-        rand.seed(rngSeed + 1000)
         receivedWord = simulateChannel(codeword)
 
         # print("codeword = ", codeword, ", receivedWord = ", receivedWord)
 
         xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
 
-        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, rngSeed, trustXYProbs)
+        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, genieSingleRunSeed, trustXYProbs)
 
         if  TVvec is None:
             TVvec = TVvecTemp
@@ -425,6 +447,7 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
             HDecvec[i] /= numberOfTrials
             HDecsum += HDecvec[i]
 
+
     print( "TVVec = ", TVvec )
     print( "pevec = ", Pevec )
     print( "HEncvec = ", HEncvec )
@@ -435,6 +458,29 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
         print( "Normalized HDecsum = ", HDecsum /len(HDecvec) )
 
     frozenSet = frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet)
+    print( "code rate = ", (len(TVvec) - len(frozenSet)) /  len(codeword) )
+    print( "codeword length = ", len(codeword) )
+
+    if filename is not None:
+        f = open( filename, "w" )
+        s = "* " + ' '.join(sys.argv[:]) + "\n"
+        f.write(s)
+
+        for i in frozenSet:
+            f.write(str(i))
+            f.write("\n")
+
+        s = "** number of trials = " + str(numberOfTrials) + "\n"
+        f.write(s)
+        s = "* (TotalVariation+errorProbability) * (number of trials)" + "\n"
+        f.write(s)
+
+        for i in range(len(TVvec)):
+            s = "*** " + str(i) + " " + str((TVvec[i] + Pevec[i]) * numberOfTrials) +  "\n"
+            f.write(s)
+
+        f.close()
+
     return frozenSet
 
 def polarTransformOfBits( xvec ):
@@ -489,6 +535,6 @@ def frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet):
         frozenSet.add(i)
 
     print( "frozen set =", frozenSet )
-    print( "code rate =", 1.0 - len(frozenSet) / len(TVPlusPeVec) )
+    print( "fraction of non-frozen indices =", 1.0 - len(frozenSet) / len(TVPlusPeVec) )
 
     return frozenSet

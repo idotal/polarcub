@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 
-import BinaryMemorylessDistribution
-import BinaryMemorylessVectorDistribution as bmvd
-import BinaryTrellis
+from ScalarDistributions import BinaryMemorylessDistribution
+from VectorDistributions import BinaryMemorylessVectorDistribution as bmvd
+from VectorDistributions import BinaryTrellis
 import PolarEncoderDecoder
 import random
 

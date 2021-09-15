@@ -1,8 +1,7 @@
 #! /usr/bin/env python3
 
-import BinaryMemorylessDistribution
-import QaryMemorylessDistribution
-import LinkedListHeap
+from ScalarDistributions import BinaryMemorylessDistribution
+from ScalarDistributions import QaryMemorylessDistribution
 from math import log2
 import cProfile
 

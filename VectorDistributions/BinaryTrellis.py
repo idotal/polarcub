@@ -1,6 +1,7 @@
 import numpy as np
 import VectorDistribution
 import random
+import scipy.special
 
 class Vertex():
     def __init__(self, stateId = -1, verticalPosInLayer = -1, layer = -1, vertexProb = -1.0):
@@ -288,30 +289,96 @@ class BinaryTrellis(VectorDistribution.VectorDistribution):
                 for (outgoingEdgeKey, outgoingEdge) in v.outgoingEdges.items():
                     outgoingEdge.edgeProb /= t
 
-def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionProb, trimmedZerosAtEdges=False):
+def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionProb, trimmedZerosAtEdges, numberOfOnesToAddAtBothEndsOfGuardbands):
     trellis = BinaryTrellis(codewordLength)
-    deletionCount = codewordLength - len(receivedWord)
+
+    deletionCount = codewordLength + 2 * numberOfOnesToAddAtBothEndsOfGuardbands - len(receivedWord)
+
     inputProb = [0.5, 0.5]
 
-    vertex_stateId = 0
-    vertex_verticalPosInLayer = 0
-    vertex_layer = 0
-    vertexProb = 1.0
+    vertex_stateId = 0 # only one state in the input process
+    vertex_layer = 0 # start with the first layer
 
+    if numberOfOnesToAddAtBothEndsOfGuardbands > 0:
+        assert( trimmedZerosAtEdges == True )
 
-    trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+    if numberOfOnesToAddAtBothEndsOfGuardbands > 0:
+        # See longer explanation below about collapsing the leftmost layer of an auxiliary trellis into the layer to its right.
 
-    vertex_verticalPosInLayer = len(receivedWord) 
+        # Commented out code for the case of adding a single 1 at the edge of each guard band
+        #
+        # # Add the vertex corresponding to "the 1 from the guard band was deleted"
+        # vertex_verticalPosInLayer = 0
+        # vertexProb = deletionProb 
+        # trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+        #
+        # if len(receivedWord) > 0: # Add the vertex corresponding to "the 1 from the guard band was not deleted"
+        #     vertex_verticalPosInLayer = 1 # the first y corresponds to the 1 from the guard band, so start with the second y
+        #     vertexProb = 1.0 - deletionProb 
+        #     trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+
+        for i in range( 1 + min(numberOfOnesToAddAtBothEndsOfGuardbands, len(receivedWord)) ):
+            vertex_verticalPosInLayer = i
+            vertexProb = scipy.special.comb( numberOfOnesToAddAtBothEndsOfGuardbands, i, exact=True ) * ((1.0 - deletionProb) ** i) * ( deletionProb ** ( numberOfOnesToAddAtBothEndsOfGuardbands - i) )
+            trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+            
+    else:
+        # add a single vertex
+        vertex_verticalPosInLayer = 0
+        vertexProb = 1.0
+        trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+
+    # Now add the vertices in the last layer (either a single vertex or two vertices)
     vertex_layer = codewordLength
 
-    trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+    if numberOfOnesToAddAtBothEndsOfGuardbands > 0:
+        # See longer explanation below about collapsing the rightmost layer of an auxiliary trellis into the layer to its left.
+
+        # Commented out code for the case of adding a single 1 at the edge of each guard band
+        #
+        # Add the vertex corresponding to "the 1 from the guard band was deleted"
+        # vertex_verticalPosInLayer = len(receivedWord) 
+        # vertexProb = deletionProb 
+        # trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+        #
+        # if len(receivedWord) > 0: # Add the vertex corresponding to "the 1 from the guard band was not deleted"
+        #     vertex_verticalPosInLayer = len(receivedWord) - 1 # the last y corresponds to the 1 from the guard band, so end with the penultimate y
+        #     vertexProb = 1.0 - deletionProb
+        #     trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+
+        for i in range(len(receivedWord), len(receivedWord) - min(numberOfOnesToAddAtBothEndsOfGuardbands, len(receivedWord)) -1, -1 ):
+            vertex_verticalPosInLayer = i
+            j = len(receivedWord) - i
+            vertexProb = scipy.special.comb( numberOfOnesToAddAtBothEndsOfGuardbands, j, exact=True ) * ((1.0 - deletionProb) ** j) * ( deletionProb ** ( numberOfOnesToAddAtBothEndsOfGuardbands - j) )
+            trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
+    else:
+        # add a single vertex
+        vertex_verticalPosInLayer = len(receivedWord) 
+        vertexProb = 1.0 # not really needed, but for readability
+        trellis.setVertexProb(vertex_stateId, vertex_verticalPosInLayer, vertex_layer, vertexProb)
 
     if trimmedZerosAtEdges == True:
         assert( len(receivedWord) == 0 or (receivedWord[0] == 1 and receivedWord[-1] == 1))
 
-    for l in range(codewordLength):
-        vpos_min = max(0, l - deletionCount)
-        vpos_max = min(l, len(receivedWord))
+    for l in range(codewordLength): # add edges from layer l to layer l+1
+        # min and max vertical positions in layer l
+        if numberOfOnesToAddAtBothEndsOfGuardbands > 0:
+            # Explanation for adding a single 1 at the ends of the guard bands. Need to generalize...
+            #
+            # The simplest way to think of what is going for this case is to write a trellis for the two forced '1' inputs from the guard bands.
+            # Thus, the first and last inputs are forced to be '1'. Since the first input is known to be 1, we can collapse the first layer into the second.
+            # Likewise, since the last input is known to be  '1', we can collapse the last layer into the penultimate layer.
+            # Thus, layer l of the new trellis is layer l' = l+1 of the original layer
+            #
+            # vpos_min = max(0, l + 1 - deletionCount) # Look at the simpler case below, write l' in place of l, and then use l'=l+1
+            # vpos_max = min(l + 1, len(receivedWord))
+
+            # The generalization: l' = l + numberOfOnesToAddAtBothEndsOfGuardbands
+            vpos_min = max(0, l + numberOfOnesToAddAtBothEndsOfGuardbands - deletionCount) # Look at the simpler case below, write l' in place of l, and then use l'=l+numberOfOnesToAddAtBothEndsOfGuardbands
+            vpos_max = min(l + numberOfOnesToAddAtBothEndsOfGuardbands, len(receivedWord))
+        else:
+            vpos_min = max(0, l - deletionCount)
+            vpos_max = min(l, len(receivedWord))
 
         for vpos in range(vpos_min, vpos_max+1):
             if vpos < len(receivedWord): # then we can have a non-deletion event
@@ -325,7 +392,8 @@ def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionPro
                 probToAdd = inputProb[edgeLabel] * (1.0 - deletionProb)
 
                 trellis.addToEdgeProb(fromVertex_stateId, fromVertex_verticalPosInLayer, fromVertex_layer, toVertex_stateId, toVertex_verticalPosInLayer, toVertex_layer, edgeLabel, probToAdd)
-            if l - vpos < deletionCount: # then we can have a deletion event
+            # if ((numberOfOnesToAddAtBothEndsOfGuardbands > 0 and l + 1 - vpos < deletionCount) or (numberOfOnesToAddAtBothEndsOfGuardbands == 0 and l - vpos < deletionCount)): # then we can have a deletion event
+            if l + 1 + numberOfOnesToAddAtBothEndsOfGuardbands - deletionCount <= vpos : # then we can have a deletion event
                 for edgeLabel in range(2):
                     fromVertex_stateId = 0
                     fromVertex_verticalPosInLayer = vpos
@@ -343,22 +411,24 @@ def buildTrellis_uniformInput_deletion(receivedWord, codewordLength, deletionPro
 
     return trellis
 
-def deletionChannelSimulation(codeword, p, seed):
+def deletionChannelSimulation(codeword, p, seed, randomNumberGenerator=None):
     N = len(codeword)
     receivedWord = []
 
-    # print("deletionChannelSimulation, codeword = ", codeword)
-    if seed is not None:
-        random.seed(seed)
+    if randomNumberGenerator is not None:
+        assert(seed is None)
+    else:
+        if seed is None:
+            seed = 200 # just pick a number that is not 0
+        randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(seed)
 
     for i in range(N):
-        r = random.random()
+        r = randomNumberGenerator.random()
 
         if r < p:
             pass
         else:
             receivedWord.append(codeword[i])
-
-    # print("deletionChannelSimulation, receivedWord = ", receivedWord)
 
     return receivedWord

@@ -1,4 +1,6 @@
-cython/build
-cython/*.c
-cython/*.html
-cython/*.so
+*.so
+*.c
+*.html
+build/*
+scripts/deletion*.txt
+scripts/jobs.txt

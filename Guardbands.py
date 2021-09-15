@@ -1,23 +1,32 @@
 import math
 
-# TODO: change "codeword" to "encodedVector"
-def addDeletionGuardBands(codeword, n, n0, xi):
-    """Add deletion guard bands, according to equations (68) and (69) in the deletions paper"""
+def addDeletionGuardBands(encodedVector, n, n0, xi, numberOfOnesToAddAtBothEndsOfGuardbands=0):
+    """Add deletion guard bands, according to equations (68) and (69) in the deletions paper
+
+    Optionally, add ones at both ends (and also at the start and end of the encoded vector)
+    """
 
     if n <= n0:
-        return codeword
+        if numberOfOnesToAddAtBothEndsOfGuardbands > 0:
+            allTogether = []
+            allTogether.extend([1 for i in range(numberOfOnesToAddAtBothEndsOfGuardbands)])
+            allTogether.extend(encodedVector)
+            allTogether.extend([1 for i in range(numberOfOnesToAddAtBothEndsOfGuardbands)])
+            return allTogether
+        else:
+            return encodedVector
     else:
-        assert(len(codeword) % 2 == 0)
+        assert(len(encodedVector) % 2 == 0)
 
         ln = math.floor(2**((1-xi)*(n-1)))
 
-        # print( " codeword = ", codeword, " n = ", n, " ln =", ln )
+        # print( " encodedVector = ", encodedVector, " n = ", n, " ln =", ln )
 
-        leftPartOfCodeword = codeword[0:len(codeword)//2]
-        rightPartOfCodeword = codeword[len(codeword)//2:len(codeword)]
+        leftPartOfEncodedVector = encodedVector[0:len(encodedVector)//2]
+        rightPartOfEncodedVector = encodedVector[len(encodedVector)//2:len(encodedVector)]
 
-        leftAfterGuardBandsAdded = addDeletionGuardBands(leftPartOfCodeword, n-1, n0, xi)
-        rightAfterGuardBandsAdded = addDeletionGuardBands(rightPartOfCodeword, n-1, n0, xi)
+        leftAfterGuardBandsAdded = addDeletionGuardBands(leftPartOfEncodedVector, n-1, n0, xi, numberOfOnesToAddAtBothEndsOfGuardbands)
+        rightAfterGuardBandsAdded = addDeletionGuardBands(rightPartOfEncodedVector, n-1, n0, xi, numberOfOnesToAddAtBothEndsOfGuardbands)
 
         guardBand = []
 
@@ -33,7 +42,9 @@ def addDeletionGuardBands(codeword, n, n0, xi):
 
 
 def removeDeletionGuardBands(receivedWord, n, n0):
-    """Undo the addition of guard bands (plus trim), and return a list of the resulting substrings."""
+    """Undo the addition of guard bands (trim zeros), and return a list of the resulting substrings.
+
+    """
 
     trimmedReceivedWord = trimZerosAtEdges(receivedWord)
 

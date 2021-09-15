@@ -1,5 +1,5 @@
-import BinaryMemorylessDistribution
-from BinaryMemorylessDistribution import eta, naturalEta
+from ScalarDistributions import BinaryMemorylessDistribution
+from ScalarDistributions.BinaryMemorylessDistribution import eta, naturalEta
 from math import floor
 import numpy as np
 import sys

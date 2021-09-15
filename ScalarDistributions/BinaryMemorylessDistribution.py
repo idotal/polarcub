@@ -1,9 +1,9 @@
 import math
 import sys
-import LinkedListHeap
 import itertools
-import BinaryMemorylessVectorDistribution
-import BinaryTrellis
+from ScalarDistributions.UpgradingDegrading import LinkedListHeap
+from VectorDistributions import BinaryMemorylessVectorDistribution
+from VectorDistributions import BinaryTrellis
 import PolarEncoderDecoder
 
 # from cython.cython_BinaryMemorylessDistribution import eta as fast_eta

@@ -29,6 +29,3 @@ class VectorDistribution:
     def normalize(self, normalization):
         assert(False)
 
-
-    
-

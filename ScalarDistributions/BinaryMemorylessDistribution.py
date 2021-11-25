@@ -66,6 +66,22 @@ class BinaryMemorylessDistribution:
 
         return entropySum
 
+    def mmse(self):
+        # xprime = 1 - 2*x. That is,  0 -> 1, 1 -> -1
+
+        mmseSum = 0.0
+
+        for probPair in self.probs:
+            probY = probPair[0] + probPair[1]
+            if probY == 0.0:
+                continue
+
+            expectationOfXPrimeGivenY = (1 * probPair[0] + (-1) * probPair[1])/probY  
+            for x in range(2):
+                xprime = 1 - 2*x
+                mmseSum += probPair[x] * ( xprime - expectationOfXPrimeGivenY ) ** 2
+        return mmseSum
+
     # housekeeping
 
     def normalize(self):

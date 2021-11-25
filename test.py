@@ -493,8 +493,17 @@ def qdegradeUniform():
 # qupgradeSimple()
 # qupgradeUniform()
 # qdegradeUniform()
-qupgradeInputDistribution()
-qupgradeInputDistribution_static()
+# qupgradeInputDistribution()
+# qupgradeInputDistribution_static()
 # cProfile.run('qupgrade()')
 # qupgradeMultivariateNormal()
 # qdegradeMultivariateNormal()
+
+p = 0.11
+channel = BinaryMemorylessDistribution.makeBEC(p)
+print( channel.mmse() )
+transformed = channel.plusTransform()
+print( transformed.mmse() )
+transformed = channel.minusTransform()
+print( transformed.mmse() )
+

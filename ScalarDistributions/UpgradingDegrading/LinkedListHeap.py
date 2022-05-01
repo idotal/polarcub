@@ -9,12 +9,12 @@ class LinkedListHeap:
         self._tail = None
         self._heapArray = []
 
-        assert (keyList == None and dataList == None) or len(dataList) == len(keyList) 
+        assert (keyList == None and dataList == None) or len(dataList) == len(keyList)
 
         # no data given
         if dataList == None and keyList == None:
             return
-        
+
         # TODO: This is O(n log n). We could use makeheap and get down to O(n)
         for key, data in zip(keyList, dataList):
             self.insertAtTail(key, data)
@@ -28,9 +28,10 @@ class LinkedListHeap:
         s = s + "head -> "
 
         element = self._head
-        while ( element != None ):
+        while (element != None):
             # s = s + "(mem = " + str(element) + " indexInArray = " + str(element.indexInArray) + ", key = " + str(element.key) + ", data = " + str(element.data) + ")"
-            s = s + "(indexInArray = " + str(element.indexInArray) + ", key = " + str(element.key) + ", data = " + str(element.data) + ")"
+            s = s + "(indexInArray = " + str(element.indexInArray) + ", key = " + str(element.key) + ", data = " + str(
+                element.data) + ")"
 
             if element != self._tail:
                 s = s + " <-> "
@@ -95,7 +96,7 @@ class LinkedListHeap:
 
         # if there is an element to the left of us, update its right element to point to us
         if element.leftElementInList != None:
-           element.leftElementInList.rightElementInList = element
+            element.leftElementInList.rightElementInList = element
 
         # add ourselves to the array
         self._heapArray.append(element)
@@ -128,17 +129,17 @@ class LinkedListHeap:
         while True:
             parentIndex = indexOfParentInArray(element.indexInArray)
 
-            if ( parentIndex == -1 ): # we are the root
+            if (parentIndex == -1):  # we are the root
                 break
-            
+
             parent = self._heapArray[parentIndex]
 
-            if ( parent.key < element.key ):
+            if (parent.key < element.key):
                 break
 
-            self._swap(element,  parent)
+            self._swap(element, parent)
 
-    def _propagateDown(self,linkedListHeapElement):
+    def _propagateDown(self, linkedListHeapElement):
         element = linkedListHeapElement
 
         while True:
@@ -160,32 +161,36 @@ class LinkedListHeap:
                     minKey = rightChild.key
                     minChild = rightChild
 
-            if minChild == None: # we are the root
+            if minChild == None:  # we are the root
                 break
 
             self._swap(element, minChild)
 
+
 class LinkedListHeapElement:
     def __init__(self):
         # set the following three fields to a value that will stand out if not initialized properly later
-        self.indexInArray = None 
+        self.indexInArray = None
         self.key = None
         self.data = None
 
         # set to a default value that makes sense
-        self.leftElementInList = None # 
+        self.leftElementInList = None  #
         self.rightElementInList = None
 
+
 def indexOfLeftChildInArray(i):
-    return 2*(i+1) - 1
+    return 2 * (i + 1) - 1
+
 
 def indexOfRightChildInArray(i):
-    return 2*(i+1) + 1 - 1
+    return 2 * (i + 1) + 1 - 1
+
 
 def indexOfParentInArray(i):
-    return (i+1) // 2 - 1
+    return (i + 1) // 2 - 1
 
-def updateData_degrade(dataLeft, dataCenter, dataRight): # merge dataLeft and dataCenter
+
+def updateData_degrade(dataLeft, dataCenter, dataRight):  # merge dataLeft and dataCenter
     dataLeft[0] += dataCenter[0]
     dataLeft[1] += dataCenter[1]
-

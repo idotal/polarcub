@@ -1,25 +1,19 @@
-import math
-import sys
-from enum import Enum
-from math import floor
-
-import numpy as np
-
-import QaryPolarEncoderDecoder
 from ScalarDistributions import BinaryMemorylessDistribution
 from ScalarDistributions.BinaryMemorylessDistribution import eta, naturalEta
-# constants
-from VectorDistributions import QaryMemorylessVectorDistribution
+from math import floor
+import numpy as np
+import sys
+import math
+from enum import Enum
 
+# constants
 lcrLeft = 0
 lcrCenter = 1
 lcrRight = 2
 
-
 class Binning(Enum):
-    TalSharovVardy = 1  # standard cell function for static degrade
-    PeregTal = 2  # standard cell function for static upgrade
-
+    TalSharovVardy = 1 # standard cell function for static degrade
+    PeregTal = 2 # standard cell function for static upgrade
 
 class QaryMemorylessDistribution:
     def __init__(self, q):
@@ -27,18 +21,15 @@ class QaryMemorylessDistribution:
         self.q = q
 
     def __str__(self):
-        s = "Q-ary memoryless channel with q = " + str(self.q) + " and " + str(
-            len(self.probs)) + " output symbols. The error probability is " + str(
-            self.errorProb()) + ". The conditional entropy is " + str(
-            self.conditionalEntropy()) + ". [p(y,x=0), p(y,x=1), ..., p(y,x=q-1)]: "
+        s = "Qry memoryless channel with q = " + str(self.q) + " and " + str(len(self.probs)) + " output symbols. The error probability is " + str(self.errorProb()) + ". The conditional entropy is " + str(self.conditionalEntropy()) +  ". [p(y,x=0), p(y,x=1), ..., p(y,x=q-1)]: "
 
         for probTuple in self.probs:
-            s += "["
+            s += "[" 
             for x in range(self.q):
                 s += str(probTuple[x]) + ", "
-            s = s[0:-2]  # remove the last ", "
+            s = s[0:-2] # remove the last ", "
             s += "], "
-        s = s[0:-2]  # remove the last ", "
+        s = s[0:-2] # remove the last ", "
         return s
 
     def append(self, item):
@@ -54,7 +45,7 @@ class QaryMemorylessDistribution:
         for probTuple in self.probs:
             tempProbTuple = probTuple.copy()
             tempProbTuple.sort()
-            total += sum(tempProbTuple[:-1])
+            total += sum( tempProbTuple[:-1] )
 
         return total
 
@@ -88,9 +79,9 @@ class QaryMemorylessDistribution:
         for probTuple in self.probs:
             for p1 in probTuple:
                 for p2 in probTuple:
-                    totalVariationSum += abs(p1 - p2)
+                    totalVariationSum += abs(p1-p2)
 
-        totalVariationSum /= 2 * (self.q - 1)
+        totalVariationSum /= 2*(self.q - 1)
         return totalVariationSum
 
     def oneHotBinaryMemorylessDistributions(self):
@@ -105,7 +96,7 @@ class QaryMemorylessDistribution:
         q = self.q
 
         # create q-1 "empty" channels
-        for i in range(q - 1):
+        for i in range(q-1):
             binaryMemorylessDistributions.append(BinaryMemorylessDistribution.BinaryMemorylessDistribution())
             binaryMemorylessDistributions[i].auxiliary = []
 
@@ -117,8 +108,8 @@ class QaryMemorylessDistribution:
         for x in range(q):
             probGreaterThan.append(0)
 
-        for x in range(q - 2, -1, -1):
-            probGreaterThan[x] = probGreaterThan[x + 1] + marginals[x + 1]
+        for x in range(q-2,-1,-1):
+            probGreaterThan[x] = probGreaterThan[x+1] + marginals[x+1]
 
         # x \equiv (x_0,x_1,...x_{q-2}), where x_j = 1 iff x = j (the vector is all zero iff x = q-1)
 
@@ -127,23 +118,23 @@ class QaryMemorylessDistribution:
 
         for yindex, probTuple in enumerate(self.probs):
 
-            prev_pbzero = prev_pbone = None  # to catch errors
+            prev_pbzero = prev_pbone = None # to catch errors
 
-            for j in range(q - 2, -1, -1):
+            for j in range(q-2,-1,-1):
                 # Calculate P(X_j = b, Y=y, X^{j-1} = 0), for b = 1. That is, P(X = j, Y=y)
                 pbone = probTuple[j]
                 # Calculate P(X_j = b, Y=y, X^{j-1} = 0), for b = 0. That is, P(X > j, Y=y)
-                if j == q - 2:
-                    pbzero = probTuple[j + 1]
+                if j == q-2:
+                    pbzero = probTuple[j+1]
                 else:
-                    pbzero = prev_pbone + prev_pbzero  # greater than j either means j+1 or greater than j+1
+                    pbzero =  prev_pbone + prev_pbzero # greater than j either means j+1 or greater than j+1
 
                 prev_pbzero, prev_pbone = pbzero, pbone
 
                 if j == 0:
                     probPair = [pbzero, pbone]
                 else:
-                    probPair = [pbzero / probGreaterThan[j - 1], pbone / probGreaterThan[j - 1]]
+                    probPair = [pbzero/probGreaterThan[j-1], pbone/probGreaterThan[j-1]]
 
                 binaryMemorylessDistributions[j].append(probPair)
                 binaryMemorylessDistributions[j].auxiliary.append({yindex})
@@ -161,16 +152,6 @@ class QaryMemorylessDistribution:
             marginals.append(tempSum)
 
         return marginals
-
-    def calcXMarginal(self, x):
-        """calculate the marginal p(X = x)"""
-        tempSum = 0.0
-        for probTuple in self.probs:
-            tempSum += probTuple[x]
-        return tempSum
-
-    def probXGivenY(self, x, y):
-        return self.probs[y][x] / sum(self.probs[y])
 
     def calcYMarginal(self, y):
         """calculate the marginal p(Y = y)"""
@@ -217,22 +198,23 @@ class QaryMemorylessDistribution:
         oneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
 
         M = self.calcMFromL(L)
-
+        
         degradedOneHotBinaryMemorylessDistributions = []
-        for x in range(self.q - 1):
-            degradedOneHotBinaryMemorylessDistributions.append(oneHotBinaryMemorylessDistributions[x].degrade(M))
+        for x in range(self.q-1):
+            degradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].degrade(M) )
 
         newDistribution = QaryMemorylessDistribution(self.q)
 
         newOutputAlphabetSize = self.calcNewOutputAlphabetSize(degradedOneHotBinaryMemorylessDistributions)
 
-        allzeroindexvector = [0 for x in range(self.q - 1)]
+        allzeroindexvector = [0 for x in range(self.q -1)]
 
         yoldMappedTo = []
         for yold in range(len(self.probs)):
             # by default, if yold is not mapped to any symbol in a one-hot channel
             # (because of zero probability), it is mapped to symbol 0 of that channel
-            yoldMappedTo.append(allzeroindexvector.copy())
+            yoldMappedTo.append(allzeroindexvector.copy()) 
+
 
         for x in range(self.q - 1):
             for yOneHotIndex, auxDatum in enumerate(degradedOneHotBinaryMemorylessDistributions[x].auxiliary):
@@ -253,7 +235,7 @@ class QaryMemorylessDistribution:
                 newDistribution.probs[ynew][x] += yoldprobs[x]
 
         newDistribution.removeZeroProbOutput()
-        newDistribution.normalize()  # for good measure
+        newDistribution.normalize() # for good measure
 
         return newDistribution
 
@@ -262,12 +244,11 @@ class QaryMemorylessDistribution:
         # M = (self.q-1) * M # allow for at least L "non-empty" cells in the worst case (in order to have a fair comparison with the dynamic method)
 
         if binningToUse == Binning.TalSharovVardy:
-            mu = 1.0 / (math.e * (
-                    M / 2))  # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
+            mu =  1.0 / (math.e * (M / 2) ) # mu from the paper by Tal, Sharov, and Vardy, but for simplicity, use the natural logarithm (beta = alpha = 1/e)
         elif binningToUse == Binning.PeregTal:
-            mu, indexOfBorderCell, maxProbOfBorderCell, gamma = self.calcMuForPeregTal(M)
+            mu, indexOfBorderCell, maxProbOfBorderCell, gamma =  self.calcMuForPeregTal(M)
         else:
-            assert (false)
+            assert(false)
 
         dims = [M for i in range(self.q)]
 
@@ -283,16 +264,15 @@ class QaryMemorylessDistribution:
             cell = []
             for x in range(self.q):
                 if binningToUse == Binning.TalSharovVardy:
-                    cell.append(self.calcCell_TalSharovVardy(prob[x] / probsum, M, mu))
+                    cell.append(self.calcCell_TalSharovVardy(prob[x]/probsum, M, mu))
                 else:
-                    cell.append(
-                        self.calcCell_PeregTal(prob[x] / probsum, M, mu, indexOfBorderCell, maxProbOfBorderCell, gamma))
+                    cell.append(self.calcCell_PeregTal(prob[x]/probsum, M, mu, indexOfBorderCell, maxProbOfBorderCell, gamma))
 
             cellsArray[tuple(cell)] |= {yold}
 
         return cellsArray
 
-    def degrade_static(self, L, binningToUse=Binning.TalSharovVardy):
+    def degrade_static(self, L, binningToUse = Binning.TalSharovVardy):
         # TODO: cells or bins?
         cellsArray = self.putLettersInBins(L, binningToUse)
         newDistribution = QaryMemorylessDistribution(self.q)
@@ -307,9 +287,9 @@ class QaryMemorylessDistribution:
             for yold in actualSet:
                 for x in range(self.q):
                     ynewProb[x] += self.probs[yold][x]
-
+            
             newDistribution.probs.append(ynewProb)
-        newDistribution.normalize()  # for good measure
+        newDistribution.normalize() # for good measure
         return newDistribution
 
     def calcCell_TalSharovVardy(self, postProb, M, mu):
@@ -318,7 +298,7 @@ class QaryMemorylessDistribution:
         else:
             cell = M - 1 - floor(naturalEta(postProb) / mu)
 
-        assert (cell >= 0 and cell < M)
+        assert(cell >= 0 and cell < M)
         return cell
 
     def upgrade(self, L):
@@ -329,8 +309,8 @@ class QaryMemorylessDistribution:
         M = self.calcMFromL(L)
 
         upgradedOneHotBinaryMemorylessDistributions = []
-        for x in range(self.q - 1):
-            upgradedOneHotBinaryMemorylessDistributions.append(oneHotBinaryMemorylessDistributions[x].upgrade(M))
+        for x in range(self.q-1):
+            upgradedOneHotBinaryMemorylessDistributions.append( oneHotBinaryMemorylessDistributions[x].upgrade(M) )
 
         newDistribution = QaryMemorylessDistribution(self.q)
 
@@ -339,13 +319,13 @@ class QaryMemorylessDistribution:
         # yoldMappedTo[yold][x][lcr], where lcr=0,1,2 corresponds to left, center, right
         yoldMappedTo = []
         for yold in range(len(self.probs)):
-            yoldMappedTo.append([[None for lcr in range(3)] for x in range(self.q - 1)])
+            yoldMappedTo.append([[None for lcr in range(3)] for x in range(self.q-1)]) 
 
         for x in range(self.q - 1):
             for yOneHotIndex, auxDatum in enumerate(upgradedOneHotBinaryMemorylessDistributions[x].auxiliary):
-                for lcr in range(3):  # left-center-right
+                for lcr in range(3): #left-center-right
                     for yold in auxDatum[lcr]:
-                        assert (yoldMappedTo[yold][x][lcr] == None)
+                        assert( yoldMappedTo[yold][x][lcr] == None )
                         yoldMappedTo[yold][x][lcr] = yOneHotIndex
 
         allzeroprobvector = [0.0 for x in range(self.q)]
@@ -359,41 +339,35 @@ class QaryMemorylessDistribution:
         originalOneHotBinaryMemorylessDistributions = self.oneHotBinaryMemorylessDistributions()
 
         for yold in range(len(self.probs)):
-            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers,
-                                              upgradedOneHotBinaryMemorylessDistributions,
-                                              originalOneHotBinaryMemorylessDistributions)
+            self.addToNewDistribution_upgrade(yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
         newDistribution.removeZeroProbOutput()
-        newDistribution.normalize()  # for good measure
+        newDistribution.normalize() # for good measure
 
         return newDistribution
 
-    def addToNewDistribution_upgrade(self, yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers,
-                                     upgradedOneHotBinaryMemorylessDistributions,
-                                     originalOneHotBinaryMemorylessDistributions):
+    def addToNewDistribution_upgrade(self, yold, yoldMappedTo, newDistribution, conversionToYNewMultipliers, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions):
         yoldMarginal = self.calcYMarginal(yold)
-
+        
         lcrvec = self.initializeLCRVector(yold, yoldMappedTo)
 
         while True:
             ynew = self.yoldToNew_upgrade(yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers)
             # we've picked yold, and now ynew (through lcrvec). 
-            x_ynew_yold_probs = self.calc_probs_of_x_ynew_given_yold(yold, yoldMappedTo, lcrvec,
-                                                                     upgradedOneHotBinaryMemorylessDistributions,
-                                                                     originalOneHotBinaryMemorylessDistributions)
+            x_ynew_yold_probs = self.calc_probs_of_x_ynew_given_yold(yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions)
 
-            marginalFromNowProb = [0.0 for i in range(
-                self.q + 1)]  # marginalFromNowProb[i] = P(ynew[i],ynew[i+1],...,ynew[q-2]|yold)
 
-            marginalFromNowProb[self.q - 1] = 1.0
-            for i in range(self.q - 2, -1, -1):
-                marginalFromNowProb[i] = marginalFromNowProb[i + 1] * (
-                        x_ynew_yold_probs[i][0] + x_ynew_yold_probs[i][1])
+            marginalFromNowProb = [0.0 for i in range(self.q+1)] # marginalFromNowProb[i] = P(ynew[i],ynew[i+1],...,ynew[q-2]|yold)
+
+            marginalFromNowProb[self.q-1] = 1.0
+            for i in range(self.q-2, -1, -1): 
+                marginalFromNowProb[i] = marginalFromNowProb[i+1] * (x_ynew_yold_probs[i][0] + x_ynew_yold_probs[i][1])
+
 
             zeroTilNowProb = 1.0
-            for x in range(self.q):  # add to newDistribution[ynew][x]
+            for x in range(self.q): # add to newDistribution[ynew][x]
                 if x < self.q - 1:
-                    prob = zeroTilNowProb * x_ynew_yold_probs[x][1] * marginalFromNowProb[x + 1]
+                    prob = zeroTilNowProb * x_ynew_yold_probs[x][1] * marginalFromNowProb[x+1]
                     zeroTilNowProb *= x_ynew_yold_probs[x][0]
                 else:
                     prob = zeroTilNowProb
@@ -401,11 +375,10 @@ class QaryMemorylessDistribution:
                 prob *= yoldMarginal
                 newDistribution.probs[ynew][x] += prob
 
-            if self.iterateLCRVector(yold, yoldMappedTo, lcrvec) == False:
+            if self.iterateLCRVector(yold,yoldMappedTo,lcrvec) == False:
                 break
 
-    def calc_probs_of_x_ynew_given_yold(self, yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions,
-                                        originalOneHotBinaryMemorylessDistributions):
+    def calc_probs_of_x_ynew_given_yold(self, yold, yoldMappedTo, lcrvec, upgradedOneHotBinaryMemorylessDistributions, originalOneHotBinaryMemorylessDistributions):
         """For each 0 <= i < q-1, calculate p(x=0, ynew[i]|yold) and p(x=1, ynew[i]|yold), for the one-hot channel
         """
         probs = []
@@ -416,26 +389,24 @@ class QaryMemorylessDistribution:
             tempProbs = []
 
             if originalBinDist.calcYMarginal(yold) == 0.0:
-                tempProbs = [-1000.0, -1000.0]  # to catch errors
+                tempProbs = [-1000.0, -1000.0] # to catch errors
 
             elif lcrvec[i] == lcrCenter:
                 for x in range(2):
                     # yold implies ynew[i], with probability 1
-                    tempProbs.append(originalBinDist.probXGivenY(x, yold))
+                    tempProbs.append(originalBinDist.probXGivenY(x,yold))
             else:
                 ynew = yoldMappedTo[yold][i][lcrvec[i]]
                 otherynew = yoldMappedTo[yold][i][lcrLeft if lcrvec[i] == lcrRight else lcrRight]
                 for x in range(2):
-                    fractionMultiplier = upgradedBinDist.probXGivenY(x, ynew)
+                    fractionMultiplier = upgradedBinDist.probXGivenY(x,ynew)
 
-                    if upgradedBinDist.probXGivenY(x, otherynew) < 0.5:
-                        denominator = upgradedBinDist.probXGivenY(x, ynew) - upgradedBinDist.probXGivenY(x, otherynew)
-                        numerator = originalBinDist.probXGivenY(x, yold) - upgradedBinDist.probXGivenY(x, otherynew)
+                    if upgradedBinDist.probXGivenY(x,otherynew) < 0.5:
+                        denominator = upgradedBinDist.probXGivenY(x,ynew) - upgradedBinDist.probXGivenY(x,otherynew)
+                        numerator = originalBinDist.probXGivenY(x,yold) - upgradedBinDist.probXGivenY(x,otherynew)
                     else:
-                        denominator = upgradedBinDist.probXGivenY(1 - x, otherynew) - upgradedBinDist.probXGivenY(1 - x,
-                                                                                                                  ynew)
-                        numerator = upgradedBinDist.probXGivenY(1 - x, otherynew) - originalBinDist.probXGivenY(1 - x,
-                                                                                                                yold)
+                        denominator = upgradedBinDist.probXGivenY(1-x,otherynew) - upgradedBinDist.probXGivenY(1-x,ynew)
+                        numerator = upgradedBinDist.probXGivenY(1-x,otherynew) - originalBinDist.probXGivenY(1-x,yold) 
 
                     tempProbs.append(fractionMultiplier * numerator / denominator)
 
@@ -443,44 +414,43 @@ class QaryMemorylessDistribution:
 
         return probs
 
-    def initializeLCRVector(self, yold, yoldMappedTo):
+    def initializeLCRVector(self,yold,yoldMappedTo):
         lcrvec = []
 
-        for i in range(self.q - 1):
+        for i in range(self.q-1):
             if yoldMappedTo[yold][i][lcrLeft] == None:
-                assert (yoldMappedTo[yold][i][lcrRight] == None)
+                assert(yoldMappedTo[yold][i][lcrRight] == None)
                 lcrvec.append(lcrCenter)
             else:
-                assert (yoldMappedTo[yold][i][lcrCenter] == None and yoldMappedTo[yold][i][lcrRight] != None)
+                assert(yoldMappedTo[yold][i][lcrCenter] == None and yoldMappedTo[yold][i][lcrRight] != None)
                 lcrvec.append(lcrLeft)
         return lcrvec
 
-    def iterateLCRVector(self, yold, yoldMappedTo, lcrvec):
+    def iterateLCRVector(self,yold,yoldMappedTo,lcrvec):
 
-        for i in range(self.q - 1):
+        for i in range(self.q-1):
             if lcrvec[i] == lcrLeft:
-                assert (yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
+                assert(yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
                 lcrvec[i] = lcrRight
                 return True
             elif lcrvec[i] == lcrRight:
-                assert (yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
+                assert(yoldMappedTo[yold][i][lcrLeft] != None and yoldMappedTo[yold][i][lcrRight] != None)
                 lcrvec[i] = lcrLeft
                 # and don't return (continue to the next i)
-            else:  # lcrvec[i] == lcrCenter
-                assert (lcrvec[i] == lcrCenter)
-                assert (yoldMappedTo[yold][i][lcrLeft] == None and yoldMappedTo[yold][i][lcrRight] == None)
+            else: # lcrvec[i] == lcrCenter
+                assert( lcrvec[i] == lcrCenter )
+                assert(yoldMappedTo[yold][i][lcrLeft] == None and yoldMappedTo[yold][i][lcrRight] == None)
                 # and don't return (continue to the next i)
         return False
 
     def calcConversionToYNewMultipliers(self, oneHotBinaryMemorylessDistributions):
         conversionToYNewMultipliers = [1]
-        for x in range(1, self.q - 1):
-            conversionToYNewMultipliers.append(
-                conversionToYNewMultipliers[x - 1] * len(oneHotBinaryMemorylessDistributions[x - 1].probs))
+        for x in range(1, self.q-1):
+            conversionToYNewMultipliers.append(conversionToYNewMultipliers[x-1] * len(oneHotBinaryMemorylessDistributions[x-1].probs))
 
         return conversionToYNewMultipliers
 
-    def upgrade_static(self, L, binningToUse=Binning.PeregTal):
+    def upgrade_static(self, L, binningToUse = Binning.PeregTal):
         # TODO: cells or bins?
         cellsArray = self.putLettersInBins(L, binningToUse)
         newDistribution = QaryMemorylessDistribution(self.q)
@@ -497,7 +467,7 @@ class QaryMemorylessDistribution:
             self.upgradeCellToSymbolPlusBoosts(actualSet, newDistribution.probs)
 
         newDistribution.removeZeroProbOutput()
-        newDistribution.normalize()  # for good measure
+        newDistribution.normalize() # for good measure
         return newDistribution
 
     def upgradeCellToSymbolPlusBoosts(self, actualSet, newprobs):
@@ -514,10 +484,10 @@ class QaryMemorylessDistribution:
 
         for yold in actualSet:
             probSum = sum(self.probs[yold])
-            assert (probSum) > 0.0
+            assert(probSum) > 0.0
 
             for x in range(self.q):
-                postProb = self.probs[yold][x] / probSum
+                postProb = self.probs[yold][x]/probSum
                 if postProb > leadingPostProb:
                     leadingX = x
                     leadingPostProb = postProb
@@ -526,13 +496,13 @@ class QaryMemorylessDistribution:
         # now, find the posterior of the cell
         cellPosteriorProb = [1.0 for i in range(self.q)]
         cellPosteriorProb[leadingX] = 0.0
-
+        
         for yold in actualSet:
             probSum = sum(self.probs[yold])
             for x in range(self.q):
                 if x == leadingX:
                     continue
-                postProb = self.probs[yold][x] / probSum
+                postProb = self.probs[yold][x]/probSum
                 if postProb < cellPosteriorProb[x]:
                     cellPosteriorProb[x] = postProb
 
@@ -547,12 +517,11 @@ class QaryMemorylessDistribution:
             # debugProb = [0.0 for i in range(self.q)]
             for x in range(self.q):
                 if self.probs[yold][x] > 0.0:
-                    alphaxy = (cellPosteriorProb[x] / self.probs[yold][x]) * (
-                            self.probs[yold][leadingX] / cellPosteriorProb[leadingX])
+                    alphaxy = (cellPosteriorProb[x] / self.probs[yold][x]) * (self.probs[yold][leadingX] / cellPosteriorProb[leadingX] )
                 else:
                     alphaxy = 1.0
 
-                alphaxy = min(1.0, alphaxy)  # fix floating point rounding errors
+                alphaxy = min(1.0,alphaxy) # fix floating point rounding errors
 
                 # Now that we've calculate alphaxy, calculate the probability to add
                 ynewProb[x] += self.probs[yold][x] * alphaxy
@@ -560,7 +529,7 @@ class QaryMemorylessDistribution:
 
                 # for the boost symbol
                 newprobs[x][x] += (1.0 - alphaxy) * self.probs[yold][x]
-
+            
             # debugProbTwo = self.probs[yold].copy()
             # debugSum = sum(debugProb)
             # debugSumTwo = sum(debugProbTwo)
@@ -571,17 +540,19 @@ class QaryMemorylessDistribution:
             # print( cellPosteriorProb, debugProb, debugProbTwo )
             # print( self.probs[yold], cellPosteriorProb, debugProbTwo )
 
+
+
         # print(" * ", ynewProb)
 
         newprobs.append(ynewProb)
 
     def calcCell_PeregTal(self, postProb, M, mu, indexOfBorderCell, maxProbOfBorderCell, gamma):
         if postProb > maxProbOfBorderCell:
-            cellIndex = indexOfBorderCell + 1 + floor((postProb - maxProbOfBorderCell) * mu)
+            cellIndex = indexOfBorderCell + 1 + floor( (postProb - maxProbOfBorderCell) * mu )
         elif postProb > 1.0 / gamma:
             cellIndex = indexOfBorderCell
         else:
-            cellIndex = floor(naturalEta(postProb) * mu)
+            cellIndex = floor( naturalEta(postProb) * mu )
 
         if cellIndex > M - 1:
             cellIndex = M - 1
@@ -637,44 +608,41 @@ class QaryMemorylessDistribution:
         # * if the good condition is met, we enlarge mu
         # * if the good condition is not met, we reduce mu
 
-        assert (M > 1)
+        assert( M > 1)
 
         muUpper = 2.0 * M
         muLower = 1.0
-        gamma = 1.0 / (math.e ** 2)
+        gamma = 1.0/(math.e ** 2)
 
         while muUpper - muLower > 0.0000001:
             mu = (muUpper + muLower) / 2.0
-            cellsToLeftOfGamma = floor(
-                2.0 * gamma * mu)  # for a given mu, this is exactly the number of cells to the left of gamma
+            cellsToLeftOfGamma = floor(2.0 * gamma * mu) # for a given mu, this is exactly the number of cells to the left of gamma
             cellsToRightOfGamma = floor((1.0 - gamma) * mu)
             totalCells = cellsToLeftOfGamma + cellsToRightOfGamma + 1
-            if totalCells < M:  # mu too small
+            if totalCells < M: # mu too small
                 muLower = mu
                 continue
-            if totalCells > M:  # mu too large
+            if totalCells > M: # mu too large
                 muUpper = mu
                 continue
-
+            
             # right side and left side mean left and right of blue line, respectively
-            maxProbOfBorderCell = 1.0 - (1.0 / mu) * cellsToRightOfGamma
-            maxEtaOfBorderCell = naturalEta(maxProbOfBorderCell) if maxProbOfBorderCell < 1.0 / math.e else naturalEta(
-                1.0 / math.e)
+            maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfGamma
+            maxEtaOfBorderCell = naturalEta(maxProbOfBorderCell) if maxProbOfBorderCell < 1.0 / math.e else naturalEta(1.0 / math.e)
             minEtaOnLeftSideOfBorderCell = (1.0 / mu) * cellsToLeftOfGamma
 
-            if maxEtaOfBorderCell - minEtaOnLeftSideOfBorderCell > 1.0 / mu:  # mu too large
+            if maxEtaOfBorderCell - minEtaOnLeftSideOfBorderCell > 1.0 / mu: # mu too large
                 muUpper = mu
                 continue
 
             if maxProbOfBorderCell > 1.0 / math.e:
                 minEtaOnRightSideOfBorderCell = min(naturalEta(maxProbOfBorderCell), naturalEta(gamma))
-                if maxEtaOfBorderCell - minEtaOnRightSideOfBorderCell > 1.0 / mu:  # mu too large
+                if maxEtaOfBorderCell - minEtaOnRightSideOfBorderCell > 1.0 / mu: # mu too large
                     muUpper = mu
                     continue
 
             # is the width of the border cell greater than 1/mu?
-            if maxProbOfBorderCell > 1.0 / mu and naturalEta(
-                    maxProbOfBorderCell - 1.0 / mu) > minEtaOnLeftSideOfBorderCell:  # mu too large
+            if maxProbOfBorderCell > 1.0/mu and naturalEta(maxProbOfBorderCell - 1.0/mu) > minEtaOnLeftSideOfBorderCell: # mu too large
                 muUpper = mu
                 continue
 
@@ -685,21 +653,20 @@ class QaryMemorylessDistribution:
         mu = muLower
 
         # re-calculate key parameters
-        cellsToLeftOfGamma = floor(
-            2.0 * gamma * mu)  # for a given mu, this is exactly the number of cells to the left of gamma
+        cellsToLeftOfGamma = floor(2.0 * gamma * mu) # for a given mu, this is exactly the number of cells to the left of gamma
         cellsToRightOfGamma = floor((1.0 - gamma) * mu)
 
         # print(cellsToLeftOfGamma, cellsToRightOfGamma, mu, gamma)
-        assert (cellsToLeftOfGamma + cellsToRightOfGamma + 1 == M)
-        indexOfBorderCell = cellsToLeftOfGamma
-        maxProbOfBorderCell = 1.0 - (1.0 / mu) * cellsToRightOfGamma
+        assert( cellsToLeftOfGamma + cellsToRightOfGamma + 1 == M )
+        indexOfBorderCell  = cellsToLeftOfGamma
+        maxProbOfBorderCell = 1.0 - (1.0/mu) * cellsToRightOfGamma
 
         return mu, indexOfBorderCell, maxProbOfBorderCell, gamma
 
     def calcNewOutputAlphabetSize(self, oneHotBinaryMemorylessDistributions):
         newOutputAlphabetSize = 1
-        for x in range(self.q - 1):
-            newOutputAlphabetSize *= len(oneHotBinaryMemorylessDistributions[x].probs)
+        for x in range(self.q-1):
+             newOutputAlphabetSize *= len(oneHotBinaryMemorylessDistributions[x].probs)
 
         return newOutputAlphabetSize
 
@@ -715,7 +682,7 @@ class QaryMemorylessDistribution:
     def yoldToNew_degrade(self, yold, yoldMappedTo, conversionToYNewMultipliers):
         ynew = 0
 
-        for x in range(self.q - 1):
+        for x in range(self.q-1):
             ynew += yoldMappedTo[yold][x] * conversionToYNewMultipliers[x]
 
         return ynew
@@ -723,7 +690,7 @@ class QaryMemorylessDistribution:
     def yoldToNew_upgrade(self, yold, yoldMappedTo, lcrvec, conversionToYNewMultipliers):
         ynew = 0
 
-        for i in range(self.q - 1):
+        for i in range(self.q-1):                            
             # Some output symbols have probability zero, when conditioned on a certain set of
             # possible inputs. These, we map to the first symbol in the corresponding one-hot channel.
             mappedTo = yoldMappedTo[yold][i][lcrvec[i]] if yoldMappedTo[yold][i][lcrvec[i]] != None else 0
@@ -749,59 +716,44 @@ class QaryMemorylessDistribution:
                 self.probs[y][x] /= probSum
 
     def calcMFromL(self, L):
-        M = floor(L ** (1.0 / (self.q - 1)) + sys.float_info.epsilon)
+        M = floor( L ** (1.0/(self.q-1)) + sys.float_info.epsilon )
         return M
-
-    def makeQaryMemorylessVectorDistribution(self, length, yvec):
-        qmvd = QaryMemorylessVectorDistribution.QaryMemorylessVectorDistribution(self.q, length)
-
-        if yvec is not None:
-            assert (len(yvec) == length)
-            for i in range(length):
-                for x in range(self.q):
-                    qmvd.probs[i][x] = self.probs[yvec[i]][x]
-        else:
-            for i in range(length):
-                for x in range(self.q):
-                    qmvd.probs[i][x] = self.probs[0][x]
-
-        return qmvd
-
 
 # useful channels
 def makeQSC(q, p):
     qsc = QaryMemorylessDistribution(q)
-    qsc.probs = [[(1.0 - p) / q if x == y else p / (q * (q - 1)) for x in range(q)] for y in range(q)]
-    return qsc
 
+    for y in range(q):
+        tempProbs = [(1.0 - p)/q if x == y else p/(q*(q-1)) for x in range(q)]
+        qsc.append(tempProbs)
+    
+    return qsc
 
 def makeQEC(q, p):
     qec = QaryMemorylessDistribution(q)
 
     # first, create the non-erasure symbols
     for y in range(q):
-        tempProbs = [(1.0 - p) / q if x == y else 0.0 for x in range(q)]
+        tempProbs = [(1.0 - p)/q if x == y else 0.0 for x in range(q)]
         qec.append(tempProbs)
-
-    tempProbs = [p / q for x in range(q)]
+    
+    tempProbs = [p/q for x in range(q) ]
     qec.append(tempProbs)
 
     return qec
 
-
 def makeInputDistribution(probs):
     dist = QaryMemorylessDistribution(len(probs))
     dist.append(probs)
-    dist.normalize()  # for good measure
+    dist.normalize() # for good measure
 
     return dist
-
 
 # My conjecture is that the mutual information of this channel, in the limit is log2(q) - q \cdot \frac{\int_0^1 -p log2(p) (1-p)^{q-1}}{\int_0^1 (1-p)^{q-1}}
 def makeQuantizedUniform(q, T):
     """Make a joint distribution such that for an input x and an output (a_0,a_1,...,a_{q-1}), where the a_i are non-negative and sum to T, the joint probability is a_x / M, where M is the number of possible outputs. That is, the number of non-negative vectors  (a_0,a_1,...,a_{q-1}), whose entries sum to L. That is, M = binom{L + q - 1}{q-1}. See the paper by Tal, On the construction of polar codes for channels with moderate input alphabet sizes, and the paper by Kartowsky and Tal, Greedy-Merge Degrading has Optimal Power-Law, in which this channel is proven to be hard to degrade and hard to upgrade, respectively."""
     # M is the number of output letters we will produce
-    M = math.comb(T + q - 1, q - 1)
+    M = math.comb(T + q - 1, q-1) 
 
     quantizedUniform = QaryMemorylessDistribution(q)
 
@@ -811,7 +763,6 @@ def makeQuantizedUniform(q, T):
     recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level, T, M)
 
     return quantizedUniform
-
 
 # # For now, three points equally spaced on the unit circle, with 2-D Gaussian noise
 # # Generalize to multiple dimensions later
@@ -843,110 +794,48 @@ def recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level, T, M)
     if level == 0:
         prob = []
         for x in range(quantizedUniform.q):
-            prob.append((1.0 * outputLetter[x]) / (M * T))
+            prob.append((1.0 * outputLetter[x])/(M*T))
         quantizedUniform.probs.append(prob)
         return
 
     if level == 1:
         outputLetter.append(T - sum(outputLetter))
-        recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level - 1, T, M)
+        recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level-1, T, M)
         outputLetter.pop()
         return
 
-    for t in range(0, T + 1 - sum(outputLetter)):
+    for t in range(0, T+1 - sum(outputLetter)):
         outputLetter.append(t)
-        recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level - 1, T, M)
+        recursivlyBuildQuantizedUniform(quantizedUniform, outputLetter, level-1, T, M)
         outputLetter.pop()
-
 
 def degrade_dynamic_upper_bound(q, L):
     # Taken from equation (27) in the paper by Ordentlich and Tal
 
     # TODO: code duplication from calcMFromL
-    M = floor(L ** (1.0 / (q - 1)) + sys.float_info.epsilon)
+    M = floor( L ** (1.0/(q-1)) + sys.float_info.epsilon )
 
-    return (64 * (q - 1) / (M ** 2)) / math.log(2)  # divide by log(2) to get bits, not nats
-
+    return (64*(q-1)/(M**2))/math.log(2) # divide by log(2) to get bits, not nats
 
 def upgrade_dynamic_upper_bound(q, L):
     # Taken from equation (13) in the paper by Ordentlich and Tal
 
     # TODO: code duplication from calcMFromL
-    M = floor(L ** (1.0 / (q - 1)) + sys.float_info.epsilon)
+    M = floor( L ** (1.0/(q-1)) + sys.float_info.epsilon )
 
-    return (128 * (q - 1) / (M ** 2)) / math.log(2)  # divide by log(2) to get bits, not nats
-
+    return (128*(q-1)/(M**2))/math.log(2) # divide by log(2) to get bits, not nats
 
 def degrade_cost_lower_bound(q, L):
     # Taken from equation (3) in the paper by Tal "On the Construction of Polar Codes for Channels with Moderate Input Alphabet Sizes"
 
-    sigma = (math.pi ** ((q - 1) / 2)) / (math.gamma((q - 1) / 2 + 1))
+    sigma = (math.pi ** ((q-1)/2))/(math.gamma( (q-1)/2 + 1 ) )
 
-    return (q - 1) / (2 * (q + 1)) * ((1.0 / (sigma * math.factorial(q - 1) * L)) ** (2 / (q - 1))) / math.log(2)
-
+    return (q-1)/(2*(q+1)) * ( (1.0/(sigma * math.factorial(q-1) * L))**(2/(q-1)) )/math.log(2)
 
 def upgrade_cost_lower_bound(q, L):
     # Taken from equation (43) in the paper by Kartowsky and Tal
 
-    kappa = (q - 1) / (2 * math.pi * (q + 1)) * (math.gamma(1 + (q - 1) / 2) / math.factorial(q - 1))
+    kappa = (q-1)/(2*math.pi*(q+1))*(math.gamma(1 + (q-1)/2)/math.factorial(q-1))
 
-    return kappa * (L ** (-2 / (q - 1))) / math.log(2)
+    return kappa*(L**(-2/(q-1)))/math.log(2)
 
-
-def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution):
-    """Calculate the frozen set by degrading and upgrading the a-priori and joint distributions, respectively
-
-    Args:
-        n (int): number of polar transforms
-
-        L (int): number of quantization levels, for both encoding and decoding
-
-        upperBoundOnErrorProbability (float): select an index i to be unfrozen if the total-variation K(U_i|U^{i-1}) \leq epsilon/(2N) and the probatility of error Pe(U_i | U^{i-1}, Y^{N-1}) \leq epsilon/(2N), where epsilon is short for upperBoundOnErrorProbability
-
-        xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=j) for all j in range(q). If this is set to None, then we assume a uniform input distribution, in which case the above criterion for i being unfrozen is simplified to Pe(U_i | U^{i-1}, Y^{N-1}) \leq epsilon/N.
-
-        xyVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-posteriori entries for P(X=j) for all j in range(q). That is, entry i contains P(X=j,Y=y_i) for all j in range(q).
-    Returns:
-        frozenSet (set): the set of frozen indices
-    """
-
-    assert (n >= 0)
-    assert (L > 0)
-    assert (upperBoundOnErrorProbability > 0)
-    assert (xyDistribution is not None)
-
-    if xDistribution is not None:
-        xDists = []
-        xDists.append([])
-        xDists[0].append(xDistribution)
-
-        for m in range(1, n + 1):
-            xDists.append([])
-            for dist in xDists[m - 1]:
-                xDists[m].append(dist.minusTransform().upgrade(L))
-                xDists[m].append(dist.plusTransform().upgrade(L))
-
-    xyDists = []
-    xyDists.append([])
-    xyDists[0].append(xyDistribution)
-
-    for m in range(1, n + 1):
-        xyDists.append([])
-        for dist in xyDists[m - 1]:
-            xyDists[m].append(dist.minusTransform().degrade(L))
-            xyDists[m].append(dist.plusTransform().degrade(L))
-
-    N = 1 << n
-    TVvec = []
-    Pevec = []
-
-    for i in range(N):
-        if xDistribution is not None:
-            TVvec.append(xDists[n][i].totalVariation())
-        else:
-            TVvec.append(0.0)
-
-        Pevec.append(xyDists[n][i].errorProb())
-
-    frozenSet = QaryPolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
-    return frozenSet

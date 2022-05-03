@@ -1,24 +1,20 @@
+import numpy as np
+from ScalarDistributions import BinaryMemorylessDistribution
 import random
-import sys
 from enum import Enum
 
-import numpy as np
-
-from ScalarDistributions import BinaryMemorylessDistribution
-
+import sys
 
 class uIndexType(Enum):
     frozen = 0
     information = 1
 
-
-class BinaryPolarEncoderDecoder:
-    def __init__(self, length, frozenSet,
-                 commonRandomnessSeed):  # length is the length of the U vector, if rngSeed is set to -1, then we freeze all frozen bits to zero
+class PolarEncoderDecoder():
+    def __init__(self, length, frozenSet, commonRandomnessSeed): # length is the length of the U vector, if rngSeed is set to -1, then we freeze all frozen bits to zero
         self.commonRandomnessSeed = commonRandomnessSeed
         self.frozenSet = frozenSet
         self.length = length
-
+        
         self.frozenOrInformation = np.empty(length, uIndexType)
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
@@ -58,15 +54,13 @@ class BinaryPolarEncoderDecoder:
 
         uIndex = 0
         informationVectorIndex = 0
-        assert (len(xVectorDistribution) == self.length)
+        assert( len(xVectorDistribution) == self.length )
 
-        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex,
-                                                                                               informationVectorIndex,
-                                                                                               self.randomlyGeneratedNumbers,
-                                                                                               xVectorDistribution)
 
-        assert (next_uIndex == len(encodedVector) == len(xVectorDistribution))
-        assert (next_informationVectorIndex == len(information))
+        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution)
+
+        assert( next_uIndex == len(encodedVector) == len(xVectorDistribution) )
+        assert( next_informationVectorIndex == len(information) )
 
         return encodedVector
 
@@ -88,16 +82,12 @@ class BinaryPolarEncoderDecoder:
         information = np.empty(self.k, np.int64)
         information[:] = -1
 
-        assert (len(xVectorDistribution) == len(xyVectorDistribution) == self.length)
+        assert( len(xVectorDistribution) == len(xyVectorDistribution) == self.length )
 
-        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex,
-                                                                                               informationVectorIndex,
-                                                                                               self.randomlyGeneratedNumbers,
-                                                                                               xVectorDistribution,
-                                                                                               xyVectorDistribution)
+        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution)
 
-        assert (next_uIndex == len(encodedVector) == self.length)
-        assert (next_informationVectorIndex == len(information))
+        assert( next_uIndex == len(encodedVector) == self.length )
+        assert( next_informationVectorIndex == len(information) )
 
         return (encodedVector, information)
 
@@ -105,13 +95,13 @@ class BinaryPolarEncoderDecoder:
         self.backupFrozenSet = self.frozenSet
         self.backupCommonRandomnessSeed = self.commonRandomnessSeed
 
-        self.frozenSet = {i for i in range(self.length)}
+        self.frozenSet = { i for i in range(self.length) }
         self.commonRandomnessSeed = genieSingleRunSeed
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
     def geniePostSteps(self):
-        self.frozenSet = self.backupFrozenSet
-        self.commonRandomnessSeed = self.backupCommonRandomnessSeed
+        self.frozenSet = self.backupFrozenSet 
+        self.commonRandomnessSeed = self.backupCommonRandomnessSeed 
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
     def genieSingleDecodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, genieSingleRunSeed, trustXYProbs):
@@ -135,32 +125,26 @@ class BinaryPolarEncoderDecoder:
 
         self.geniePreSteps(genieSingleRunSeed)
 
-        assert (len(xVectorDistribution) == self.length)
+        assert( len(xVectorDistribution) == self.length )
 
         # print(xyVectorDistribution)
 
-        (decodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex,
-                                                                                               informationVectorIndex,
-                                                                                               self.randomlyGeneratedNumbers,
-                                                                                               xVectorDistribution,
-                                                                                               xyVectorDistribution,
-                                                                                               marginalizedUProbs)
+        (decodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution, marginalizedUProbs)
 
         # print( decodedVector, marginalizedUProbs )
-        assert (next_uIndex == len(decodedVector) == len(xVectorDistribution))
-        assert (next_informationVectorIndex == len(information) == 0)
-        assert (len(marginalizedUProbs) == self.length)
+        assert( next_uIndex == len(decodedVector) == len(xVectorDistribution) )
+        assert( next_informationVectorIndex == len(information) == 0 )
+        assert( len(marginalizedUProbs) ==  self.length )
 
         Pevec = []
         Hvec = []
 
         if trustXYProbs == True:
             for probPair in marginalizedUProbs:
-                Pevec.append(min(probPair[0], probPair[1]))
-                Hvec.append(
-                    BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]))
+                Pevec.append( min( probPair[0], probPair[1]) )
+                Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
         else:
-            Uvec = polarTransformOfBits(decodedVector)
+            Uvec = polarTransformOfBits( decodedVector )
             # print( "decodedVector = ", decodedVector, ", Uvec = ", Uvec )
             i = 0
             for probPair in marginalizedUProbs:
@@ -168,13 +152,14 @@ class BinaryPolarEncoderDecoder:
                 # print( i, decision, probPair)
                 i += 1
                 if probPair[decision] > probPair[1 - decision]:
-                    Pevec.append(0.0)
+                    Pevec.append( 0.0 )
                 elif probPair[decision] == probPair[1 - decision]:
-                    Pevec.append(0.5)
-                else:
-                    Pevec.append(1.0)
+                    Pevec.append( 0.5 )
+                else: 
+                    Pevec.append( 1.0 )
 
                 # Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
+            
 
         # return things to the way they were
         self.geniePostSteps()
@@ -199,33 +184,28 @@ class BinaryPolarEncoderDecoder:
 
         self.geniePreSteps(genieSingleRunSeed)
 
-        assert (len(xVectorDistribution) == self.length)
+        assert( len(xVectorDistribution) == self.length )
 
-        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex,
-                                                                                               informationVectorIndex,
-                                                                                               self.randomlyGeneratedNumbers,
-                                                                                               xVectorDistribution,
-                                                                                               None, marginalizedUProbs)
+        (encodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, self.randomlyGeneratedNumbers, xVectorDistribution, None, marginalizedUProbs)
 
         # print( encodedVector, marginalizedUProbs )
-        assert (next_uIndex == len(encodedVector) == len(xVectorDistribution))
-        assert (next_informationVectorIndex == len(information) == 0)
-        assert (len(marginalizedUProbs) == self.length)
+        assert( next_uIndex == len(encodedVector) == len(xVectorDistribution) )
+        assert( next_informationVectorIndex == len(information) == 0 )
+        assert( len(marginalizedUProbs) ==  self.length )
 
         TVvec = []
         Hvec = []
 
         for probPair in marginalizedUProbs:
-            TVvec.append(abs(probPair[0] - probPair[1]))
-            Hvec.append(BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]))
+            TVvec.append( abs( probPair[0] - probPair[1]) )
+            Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
 
         # return things to the way they were
         self.geniePostSteps()
 
         return (encodedVector, TVvec, Hvec)
 
-    def recursiveEncodeDecode(self, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers,
-                              xVectorDistribution, xyVectorDistribution=None, marginalizedUProbs=None):
+    def recursiveEncodeDecode(self, information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xVectorDistribution, xyVectorDistribution=None, marginalizedUProbs=None):
         """Encode/decode according to supplied vector distributions
 
         Args:
@@ -246,7 +226,7 @@ class BinaryPolarEncoderDecoder:
         Returns:
             (encodedVector, next_uIndex, next_informationVectorIndex): the recursive encoding of the relevant part of the information vector, as well as updated values for the parameters uIndex and informationVectorIndex
         """
-
+    
         # By default, we assume encoding, and add small corrections for decoding.
 
         encodedVector = np.empty(len(xVectorDistribution), np.int64)
@@ -271,6 +251,7 @@ class BinaryPolarEncoderDecoder:
                 else:
                     encodedVector[0] = 1
 
+
                 next_uIndex = uIndex + 1
                 next_informationVectorIndex = informationVectorIndex
 
@@ -280,7 +261,7 @@ class BinaryPolarEncoderDecoder:
                     marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
                 else:
                     marginalizedVector = xVectorDistribution.calcMarginalizedProbabilities()
-                marginalizedUProbs.append([marginalizedVector[0], marginalizedVector[1]])
+                marginalizedUProbs.append( [marginalizedVector[0], marginalizedVector[1]] )
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
         else:
@@ -296,13 +277,7 @@ class BinaryPolarEncoderDecoder:
             else:
                 xyMinusVectorDistribution = None
 
-            (minusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information,
-                                                                                                        uIndex,
-                                                                                                        informationVectorIndex,
-                                                                                                        randomlyGeneratedNumbers,
-                                                                                                        xMinusVectorDistribution,
-                                                                                                        xyMinusVectorDistribution,
-                                                                                                        marginalizedUProbs)
+            (minusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xMinusVectorDistribution, xyMinusVectorDistribution, marginalizedUProbs)
 
             xPlusVectorDistribution = xVectorDistribution.plusTransform(minusEncodedVector)
             normalization = xPlusVectorDistribution.calcNormalizationVector()
@@ -318,25 +293,17 @@ class BinaryPolarEncoderDecoder:
 
             uIndex = next_uIndex
             informationVectorIndex = next_informationVectorIndex
-            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information,
-                                                                                                       uIndex,
-                                                                                                       informationVectorIndex,
-                                                                                                       randomlyGeneratedNumbers,
-                                                                                                       xPlusVectorDistribution,
-                                                                                                       xyPlusVectorDistribution,
-                                                                                                       marginalizedUProbs)
+            (plusEncodedVector, next_uIndex, next_informationVectorIndex) = self.recursiveEncodeDecode(information, uIndex, informationVectorIndex, randomlyGeneratedNumbers, xPlusVectorDistribution, xyPlusVectorDistribution, marginalizedUProbs)
 
             halfLength = len(xVectorDistribution) // 2
 
             for halfi in range(halfLength):
-                encodedVector[2 * halfi] = (minusEncodedVector[halfi] + plusEncodedVector[halfi]) % 2
-                encodedVector[2 * halfi + 1] = plusEncodedVector[halfi]
+                encodedVector[2*halfi] = (minusEncodedVector[halfi] + plusEncodedVector[halfi]) % 2
+                encodedVector[2*halfi + 1] = plusEncodedVector[halfi]
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
 
-
-def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution,
-                           numberOfTrials, frozenSet, commonRandomnessSeed=1, randomInformationSeed=1, verbosity=0):
+def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed, randomInformationSeed, verbosity=0):
     """Run a polar encoder and a corresponding decoder (SC, not SCL)
 
     Args:
@@ -362,7 +329,7 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
 
     xVectorDistribution = make_xVectorDistribution()
 
-    encDec = BinaryPolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
+    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
 
     informationRNG = random.Random()
     informationRNG.seed(randomInformationSeed)
@@ -370,7 +337,7 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
     # Note that we set a random seed, which is in charge of both setting the information bits as well as the channel output.
     for t in range(numberOfTrials):
         information = []
-        for i in range(encDec.k):
+        for i in range( encDec.k ):
             inf = 0 if informationRNG.random() < 0.5 else 1
             information.append(inf)
 
@@ -388,7 +355,7 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
 
         (decodedVector, decodedInformation) = encDec.decode(xVectorDistribution, xyVectorDistribution)
 
-        for i in range(encDec.k):
+        for i in range( encDec.k ):
             if information[i] != decodedInformation[i]:
                 misdecodedWords += 1
                 if verbosity > 0:
@@ -401,12 +368,9 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
                     # print( t, ") error, transmitted information: ", information", ", decoded information: ", decodedInformation, ", transmitted codeword: ", codeword, ", received word: ", receivedWord )
                 break
 
-    print("Error probability = ", misdecodedWords, "/", numberOfTrials, " = ", misdecodedWords / numberOfTrials)
+    print( "Error probability = ", misdecodedWords, "/", numberOfTrials, " = ", misdecodedWords/numberOfTrials )
 
-
-def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel,
-                                make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet, genieSeed,
-                                trustXYProbs=True, filename=None):
+def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, errorUpperBoundForFrozenSet, genieSeed, trustXYProbs=True, filename=None):
     """Run a genie encoder and corresponding decoder, and return frozen set
 
     Args:
@@ -429,7 +393,7 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
        trustXYProbs (bool): Do we trust the probabilities of U_i=0 and U_i = 1 given past U and all Y (we usually should), or don't we (in case we have guard bands, which can be parsed wrong, and then result in garbage probs).
     """
 
-    commonRandomnessSeed = 0  # doesn't matter, as this common randomness will not be used (will be replaced by a different seed by the genie)
+    commonRandomnessSeed = 0 # doesn't matter, as this common randomness will not be used (will be replaced by a different seed by the genie)
 
     xVectorDistribution = make_xVectorDistribution()
 
@@ -439,15 +403,14 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
     HDecvec = None
     codewordLength = 0
 
-    encDec = BinaryPolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
+    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
     genieSingleRunSeedRNG = random.Random()
     genieSingleRunSeedRNG.seed(genieSeed)
 
     for trialNumber in range(numberOfTrials):
         genieSingleRunSeed = genieSingleRunSeedRNG.randint(1, 1000000)
-
-        (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution,
-                                                                                      genieSingleRunSeed)
+        
+        (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, genieSingleRunSeed)
 
         codeword = make_codeword(encodedVector)
 
@@ -457,17 +420,15 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
 
         xyVectorDistribution = make_xyVectrorDistribution(receivedWord)
 
-        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution,
-                                                                                      xyVectorDistribution,
-                                                                                      genieSingleRunSeed, trustXYProbs)
+        (decodedVector, PevecTemp, HdecvecTemp) = encDec.genieSingleDecodeSimulatioan(xVectorDistribution, xyVectorDistribution, genieSingleRunSeed, trustXYProbs)
 
-        if TVvec is None:
+        if  TVvec is None:
             TVvec = TVvecTemp
             Pevec = PevecTemp
             HEncvec = HencvecTemp
             HDecvec = HdecvecTemp
         else:
-            assert (len(TVvec) == len(TVvecTemp))
+            assert( len(TVvec) == len(TVvecTemp) )
             for i in range(len(TVvec)):
                 TVvec[i] += TVvecTemp[i]
                 Pevec[i] += PevecTemp[i]
@@ -486,21 +447,22 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
             HDecvec[i] /= numberOfTrials
             HDecsum += HDecvec[i]
 
-    print("TVVec = ", TVvec)
-    print("pevec = ", Pevec)
-    print("HEncvec = ", HEncvec)
+
+    print( "TVVec = ", TVvec )
+    print( "pevec = ", Pevec )
+    print( "HEncvec = ", HEncvec )
     if trustXYProbs:
-        print("HDecvec = ", HDecvec)
-    print("Normalized HEncsum = ", HEncsum / len(HEncvec))
+        print( "HDecvec = ", HDecvec )
+    print( "Normalized HEncsum = ",  HEncsum /len(HEncvec) )
     if trustXYProbs:
-        print("Normalized HDecsum = ", HDecsum / len(HDecvec))
+        print( "Normalized HDecsum = ", HDecsum /len(HDecvec) )
 
     frozenSet = frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet)
-    print("code rate = ", (len(TVvec) - len(frozenSet)) / len(codeword))
-    print("codeword length = ", len(codeword))
+    print( "code rate = ", (len(TVvec) - len(frozenSet)) /  len(codeword) )
+    print( "codeword length = ", len(codeword) )
 
     if filename is not None:
-        f = open(filename, "w")
+        f = open( filename, "w" )
         s = "* " + ' '.join(sys.argv[:]) + "\n"
         f.write(s)
 
@@ -514,26 +476,25 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
         f.write(s)
 
         for i in range(len(TVvec)):
-            s = "*** " + str(i) + " " + str((TVvec[i] + Pevec[i]) * numberOfTrials) + "\n"
+            s = "*** " + str(i) + " " + str((TVvec[i] + Pevec[i]) * numberOfTrials) +  "\n"
             f.write(s)
 
         f.close()
 
     return frozenSet
 
-
-def polarTransformOfBits(xvec):
+def polarTransformOfBits( xvec ):
     # print("xvec =", xvec)
     if len(xvec) == 1:
         return xvec
     else:
-        assert (len(xvec) % 2 == 0)
+        assert( len(xvec) % 2 == 0 )
 
         vfirst = []
         vsecond = []
         for i in range((len(xvec) // 2)):
-            vfirst.append((xvec[2 * i] + xvec[2 * i + 1]) % 2)
-            vsecond.append(xvec[2 * i + 1])
+            vfirst.append( (xvec[2*i] + xvec[2*i+1]) % 2 )
+            vsecond.append( xvec[2*i+1] )
 
         ufirst = polarTransformOfBits(vfirst)
         usecond = polarTransformOfBits(vsecond)
@@ -546,14 +507,14 @@ def polarTransformOfBits(xvec):
         # print( "transformed = ", transformed )
         return transformed
 
-
 def frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet):
+
     TVPlusPeVec = []
 
     for i in range(len(TVvec)):
         TVPlusPeVec.append(TVvec[i] + Pevec[i])
 
-    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k])
+    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
 
     # print( sortedIndices )
 
@@ -569,11 +530,11 @@ def frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet):
         else:
             break
 
-    for j in range(indexInSortedIndicesArray + 1, len(TVPlusPeVec)):
+    for j in range(indexInSortedIndicesArray+1,  len(TVPlusPeVec)):
         i = sortedIndices[j]
         frozenSet.add(i)
 
-    print("frozen set =", frozenSet)
-    print("fraction of non-frozen indices =", 1.0 - len(frozenSet) / len(TVPlusPeVec))
+    print( "frozen set =", frozenSet )
+    print( "fraction of non-frozen indices =", 1.0 - len(frozenSet) / len(TVPlusPeVec) )
 
     return frozenSet

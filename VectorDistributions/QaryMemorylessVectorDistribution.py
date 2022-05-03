@@ -1,11 +1,13 @@
 import numpy as np
 import VectorDistribution
 
-class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
-    
-    def __init__(self, length):
-        assert( length > 0 )
-        self.probs = np.empty((length, 2)) # so, probs[i][x] equals the probability of x transmitted or received at time i
+class QaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
+
+    def __init__(self, q, length):
+        assert (q > 1)
+        self.q = q
+        assert ( length > 0 )
+        self.probs = np.empty((length, q), dtype=np.float)  # so, probs[i][x] equals the probability of x transmitted or received at time i
         self.probs[:] = np.nan
         self.length = length
 
@@ -13,31 +15,33 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
         assert( self.length % 2 == 0 )
         halfLength = self.length // 2
 
-        newVector = BinaryMemorylessVectorDistribution(halfLength)
+        newVector = QaryMemorylessVectorDistribution(self.q, halfLength)
+        newVector.probs[:] = 0.0
 
         for halfi in range(halfLength):
             i = 2 * halfi
-            newVector.probs[halfi][0] = self.probs[i][0] * self.probs[i+1][0] + self.probs[i][1] * self.probs[i+1][1]
-            newVector.probs[halfi][1] = self.probs[i][0] * self.probs[i+1][1] + self.probs[i][1] * self.probs[i+1][0]
-            # print(newVector.probs[halfi][0], newVector.probs[halfi][1]) 
-
+            for x1 in range(self.q):
+                for x2 in range(self.q):
+                    u1 = (x1 + x2) % self.q
+                    newVector.probs[halfi][u1] += self.probs[i][x1] * self.probs[i + 1][x2]
         return newVector
 
     def plusTransform(self, uminusDecisions):
         assert( self.length % 2 == 0 )
         halfLength = self.length // 2
 
-        newVector = BinaryMemorylessVectorDistribution(halfLength)
+        newVector = QaryMemorylessVectorDistribution(self.q, halfLength)
+        newVector.probs[:] = 0.0
 
         for halfi in range(halfLength):
             i = 2 * halfi
-            if uminusDecisions[halfi] == 0:
-                newVector.probs[halfi][0] = self.probs[i][0] * self.probs[i+1][0] 
-                newVector.probs[halfi][1] = self.probs[i][1] * self.probs[i+1][1]
-            else:
-                newVector.probs[halfi][0] = self.probs[i][1] * self.probs[i+1][0] 
-                newVector.probs[halfi][1] = self.probs[i][0] * self.probs[i+1][1]
-            # print(newVector.probs[halfi][0], newVector.probs[halfi][1]) 
+
+            u1 = uminusDecisions[halfi]
+            for u2 in range(self.q):
+                x1 = (u1 - u2 + self.q) % self.q
+                x2 = u2
+                newVector.probs[halfi][u2] += self.probs[i][x1] * self.probs[i + 1][x2]
+            # print(newVector.probs[halfi][0], newVector.probs[halfi][1])
 
         return newVector
 
@@ -47,19 +51,19 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
     def calcMarginalizedProbabilities(self):
         assert( len(self) == 1 )
 
-        marginalizedProbs = np.empty(2)
+        marginalizedProbs = np.empty(self.q)
         marginalizedProbs[:] = np.nan
 
         s = 0.0
-        for x in range(2):
+        for x in range(self.q):
             s += self.probs[0][x]
 
         if (s > 0.0):
-            for x in range(2):
-                marginalizedProbs[x] = self.probs[0][x]/s
+            for x in range(self.q):
+                marginalizedProbs[x] = self.probs[0][x] / s
         else:
-            for x in range(2):
-                marginalizedProbs[x] = 0.5
+            for x in range(self.q):
+                marginalizedProbs[x] = 1.0 / self.q
 
         return marginalizedProbs
 
@@ -67,17 +71,18 @@ class BinaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
         normalization = np.zeros(self.length)
 
         for i in range(self.length):
-            normalization[i] = np.maximum( self.probs[i][0], self.probs[i][1] )
+            normalization[i] = self.probs[i].max(axis=0)
 
         return normalization
 
-    def normalize(self, normalization):
+    def normalize(self, normalization=None):
+        if normalization is None:
+            normalization = self.calcNormalizationVector()
         for i in range(self.length):
             t = normalization[i]
             assert( t >= 0 )
             if t == 0:
                 t = 1
 
-            for x in range(2):
+            for x in range(self.q):
                 self.probs[i][x] /= t
-

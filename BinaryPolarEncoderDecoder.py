@@ -9,12 +9,12 @@ class uIndexType(Enum):
     frozen = 0
     information = 1
 
-class PolarEncoderDecoder():
+class BinaryPolarEncoderDecoder():
     def __init__(self, length, frozenSet, commonRandomnessSeed): # length is the length of the U vector, if rngSeed is set to -1, then we freeze all frozen bits to zero
         self.commonRandomnessSeed = commonRandomnessSeed
         self.frozenSet = frozenSet
         self.length = length
-        
+
         self.frozenOrInformation = np.empty(length, uIndexType)
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
@@ -100,8 +100,8 @@ class PolarEncoderDecoder():
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
     def geniePostSteps(self):
-        self.frozenSet = self.backupFrozenSet 
-        self.commonRandomnessSeed = self.backupCommonRandomnessSeed 
+        self.frozenSet = self.backupFrozenSet
+        self.commonRandomnessSeed = self.backupCommonRandomnessSeed
         self.initializeFrozenOrInformationAndRandomlyGeneratedNumbers()
 
     def genieSingleDecodeSimulatioan(self, xVectorDistribution, xyVectorDistribution, genieSingleRunSeed, trustXYProbs):
@@ -155,11 +155,11 @@ class PolarEncoderDecoder():
                     Pevec.append( 0.0 )
                 elif probPair[decision] == probPair[1 - decision]:
                     Pevec.append( 0.5 )
-                else: 
+                else:
                     Pevec.append( 1.0 )
 
                 # Hvec.append( BinaryMemorylessDistribution.eta(probPair[0]) + BinaryMemorylessDistribution.eta(probPair[1]) )
-            
+
 
         # return things to the way they were
         self.geniePostSteps()
@@ -226,7 +226,7 @@ class PolarEncoderDecoder():
         Returns:
             (encodedVector, next_uIndex, next_informationVectorIndex): the recursive encoding of the relevant part of the information vector, as well as updated values for the parameters uIndex and informationVectorIndex
         """
-    
+
         # By default, we assume encoding, and add small corrections for decoding.
 
         encodedVector = np.empty(len(xVectorDistribution), np.int64)
@@ -303,7 +303,7 @@ class PolarEncoderDecoder():
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
 
-def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed, randomInformationSeed, verbosity=0):
+def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed=1, randomInformationSeed=1, verbosity=0):
     """Run a polar encoder and a corresponding decoder (SC, not SCL)
 
     Args:
@@ -329,7 +329,7 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
 
     xVectorDistribution = make_xVectorDistribution()
 
-    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
+    encDec = BinaryPolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
 
     informationRNG = random.Random()
     informationRNG.seed(randomInformationSeed)
@@ -403,13 +403,13 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
     HDecvec = None
     codewordLength = 0
 
-    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
+    encDec = BinaryPolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
     genieSingleRunSeedRNG = random.Random()
     genieSingleRunSeedRNG.seed(genieSeed)
 
     for trialNumber in range(numberOfTrials):
         genieSingleRunSeed = genieSingleRunSeedRNG.randint(1, 1000000)
-        
+
         (encodedVector, TVvecTemp, HencvecTemp) = encDec.genieSingleEncodeSimulatioan(xVectorDistribution, genieSingleRunSeed)
 
         codeword = make_codeword(encodedVector)
@@ -514,7 +514,7 @@ def frozenSetFromTVAndPe(TVvec, Pevec, errorUpperBoundForFrozenSet):
     for i in range(len(TVvec)):
         TVPlusPeVec.append(TVvec[i] + Pevec[i])
 
-    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k]) 
+    sortedIndices = sorted(range(len(TVPlusPeVec)), key=lambda k: TVPlusPeVec[k])
 
     # print( sortedIndices )
 

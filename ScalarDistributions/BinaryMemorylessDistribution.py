@@ -4,7 +4,7 @@ import itertools
 from ScalarDistributions.UpgradingDegrading import LinkedListHeap
 from VectorDistributions import BinaryMemorylessVectorDistribution
 from VectorDistributions import BinaryTrellis
-import PolarEncoderDecoder
+import BinaryPolarEncoderDecoder
 
 # from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
 # from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
@@ -466,6 +466,9 @@ else:
         else:
             return -p * math.log2(p)
 
+    def eta_list(p_list):
+        return sum([eta(p) for p in p_list])
+
     def naturalEta(p):
         assert 0.0 <= p <= 1.0
     
@@ -669,5 +672,5 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
 
         Pevec.append(xyDists[n][i].errorProb())
 
-    frozenSet = PolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
+    frozenSet = BinaryPolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
     return frozenSet   

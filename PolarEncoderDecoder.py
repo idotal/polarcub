@@ -9,7 +9,7 @@ class uIndexType(Enum):
     frozen = 0
     information = 1
 
-class BinaryPolarEncoderDecoder():
+class PolarEncoderDecoder():
     def __init__(self, length, frozenSet, commonRandomnessSeed): # length is the length of the U vector, if rngSeed is set to -1, then we freeze all frozen bits to zero
         self.commonRandomnessSeed = commonRandomnessSeed
         self.frozenSet = frozenSet
@@ -303,7 +303,7 @@ class BinaryPolarEncoderDecoder():
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
 
-def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed=1, randomInformationSeed=1, verbosity=0):
+def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectrorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed, randomInformationSeed, verbosity=0):
     """Run a polar encoder and a corresponding decoder (SC, not SCL)
 
     Args:
@@ -329,7 +329,7 @@ def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simu
 
     xVectorDistribution = make_xVectorDistribution()
 
-    encDec = BinaryPolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
+    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
 
     informationRNG = random.Random()
     informationRNG.seed(randomInformationSeed)
@@ -403,7 +403,7 @@ def genieEncodeDecodeSimulation(length, make_xVectorDistribution, make_codeword,
     HDecvec = None
     codewordLength = 0
 
-    encDec = BinaryPolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
+    encDec = PolarEncoderDecoder(length, frozenSet, commonRandomnessSeed)
     genieSingleRunSeedRNG = random.Random()
     genieSingleRunSeedRNG.seed(genieSeed)
 

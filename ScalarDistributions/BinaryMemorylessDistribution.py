@@ -4,7 +4,7 @@ import itertools
 from ScalarDistributions.UpgradingDegrading import LinkedListHeap
 from VectorDistributions import BinaryMemorylessVectorDistribution
 from VectorDistributions import BinaryTrellis
-import BinaryPolarEncoderDecoder
+import PolarEncoderDecoder
 
 # from cython.cython_BinaryMemorylessDistribution import eta as fast_eta
 # from cython.cython_BinaryMemorylessDistribution import hxgiveny as fast_hxgiveny
@@ -76,7 +76,7 @@ class BinaryMemorylessDistribution:
             if probY == 0.0:
                 continue
 
-            expectationOfXPrimeGivenY = (1 * probPair[0] + (-1) * probPair[1])/probY
+            expectationOfXPrimeGivenY = (1 * probPair[0] + (-1) * probPair[1])/probY  
             for x in range(2):
                 xprime = 1 - 2*x
                 mmseSum += probPair[x] * ( xprime - expectationOfXPrimeGivenY ) ** 2
@@ -126,11 +126,11 @@ class BinaryMemorylessDistribution:
 
         This way, recalling the definition of Delta in upgradeLeftRightProbs, we have deltaLeftMinusRight >= 0.
         """
-
+    
         # for numerical stability, split into list with p(x=0|y) > 0.5 and p(x=0|y) <= 0.5
         zeroMoreProbable = []
         oneMoreProbable = []
-
+        
         # for probPair in self.probs:
         #     if probPair[0] / sum(probPair) > 0.5:
         #         zeroMoreProbable.append(probPair)
@@ -200,7 +200,7 @@ class BinaryMemorylessDistribution:
 
             isclose = True
             for b in range(2):
-                if not math.isclose(probPair[b] / sum(probPair), prevProbPair[b] / sum(prevProbPair)):
+                if not math.isclose(probPair[b] / sum(probPair), prevProbPair[b] / sum(prevProbPair)):  
                     isclose = False
 
             if not isclose:
@@ -212,7 +212,7 @@ class BinaryMemorylessDistribution:
                     newProbs[-1][b] += probPair[b]
 
                     if self.auxiliary != None:
-                        newAuxiliary[-1] |= auxDatum
+                        newAuxiliary[-1] |= auxDatum 
 
         self.probs = newProbs
 
@@ -269,7 +269,7 @@ class BinaryMemorylessDistribution:
 
     # polar transforms
     def minusTransform(self):
-
+        
         newDistribution = BinaryMemorylessDistribution()
 
         for y1 in self.probs:
@@ -281,7 +281,7 @@ class BinaryMemorylessDistribution:
         return newDistribution
 
     def plusTransform(self):
-
+        
         newDistribution = BinaryMemorylessDistribution()
 
         for y1 in self.probs:
@@ -311,7 +311,7 @@ class BinaryMemorylessDistribution:
         for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
             linkedListDatum = [[probPair[0], probPair[1]], auxDatum] # make a copy
             dataList.append(linkedListDatum)
-
+                               
         for i in range(len(dataList)):
             key = _calcKey_degrade(_listIndexingHelper(dataList,i-1), _listIndexingHelper(dataList,i))
             keyList.append(key)
@@ -322,7 +322,7 @@ class BinaryMemorylessDistribution:
             topOfHeap = llh.extractHeapMin()
             leftElement = topOfHeap.leftElementInList
             rightElement = topOfHeap.rightElementInList
-
+            
             # move probs to left element
             for b in range(2):
                 leftElement.data[0][b] += topOfHeap.data[0][b]
@@ -349,9 +349,9 @@ class BinaryMemorylessDistribution:
             newDistribution.auxiliary = []
 
         for probPair, auxDatum in llh.returnData():
-            newDistribution.probs.append(probPair)
+            newDistribution.probs.append(probPair) 
             if self.auxiliary != None:
-                newDistribution.auxiliary.append(auxDatum)
+                newDistribution.auxiliary.append(auxDatum) 
 
         return newDistribution
 
@@ -381,7 +381,7 @@ class BinaryMemorylessDistribution:
         for probPair, auxDatum in itertools.zip_longest(self.probs, tempAux):
             linkedListDatum = [[probPair[0], probPair[1]],[set(), auxDatum, set()]] # make a copy
             dataList.append(linkedListDatum)
-
+                               
         for i in range(len(dataList)):
             key = _calcKey_upgrade(_listIndexingHelper(dataList,i-1), _listIndexingHelper(dataList,i), _listIndexingHelper(dataList,i+1))
             keyList.append(key)
@@ -392,7 +392,7 @@ class BinaryMemorylessDistribution:
             topOfHeap = llh.extractHeapMin()
             leftElement = topOfHeap.leftElementInList
             rightElement = topOfHeap.rightElementInList
-
+            
             probMergeLeft, probMergeRight = upgradedLeftRightProbs(leftElement.data, topOfHeap.data, rightElement.data)
 
             # move probs to left and right elements
@@ -404,7 +404,7 @@ class BinaryMemorylessDistribution:
             leftEnum = 0
             centerEnum = 1
             rightEnum = 2
-
+        
             if self.auxiliary != None:
                 leftElement.data[1][rightEnum] |= topOfHeap.data[1][centerEnum] | topOfHeap.data[1][rightEnum]
                 rightElement.data[1][leftEnum] |= topOfHeap.data[1][centerEnum] | topOfHeap.data[1][leftEnum]
@@ -429,9 +429,9 @@ class BinaryMemorylessDistribution:
             newDistribution.auxiliary = []
 
         for probPair, auxDatum in llh.returnData():
-            newDistribution.probs.append(probPair)
+            newDistribution.probs.append(probPair) 
             if self.auxiliary != None:
-                newDistribution.auxiliary.append(auxDatum)
+                newDistribution.auxiliary.append(auxDatum) 
 
         return newDistribution
 
@@ -460,18 +460,15 @@ else:
         assert 0.0 <= p <= 1.0 + 10*sys.float_info.epsilon
 
         p = min(1.0, p)
-
+    
         if p == 0.0:
             return 0.0
         else:
             return -p * math.log2(p)
 
-    def eta_list(p_list):
-        return sum([eta(p) for p in p_list])
-
     def naturalEta(p):
         assert 0.0 <= p <= 1.0
-
+    
         if p == 0.0:
             return 0.0
         else:
@@ -492,7 +489,7 @@ def makeBSC(p):
     bsc = BinaryMemorylessDistribution()
     bsc.append( [0.5 * (1.0-p), 0.5 * p] )
     bsc.append( [0.5 * p, 0.5 * (1.0-p)] )
-
+    
     return bsc
 
 def makeBEC(p):
@@ -500,13 +497,13 @@ def makeBEC(p):
     bec.append( [0.5 * (1.0-p), 0] )
     bec.append( [0, 0.5 * (1.0-p)] )
     bec.append( [0.5 * p, 0.5 * p] )
-
+    
     return bec
 
 def makeBernoulli(p):
     ber = BinaryMemorylessDistribution()
     ber.append( [1.0-p, p] )
-
+    
     return ber
 
 # private functions for degrade/upgrade
@@ -535,7 +532,7 @@ def _calcKey_upgrade(dataLeft, dataCenter, dataRight): # how much would it cost 
 
     probMergeLeft, probMergeRight = upgradedLeftRightProbs(dataLeft, dataCenter, dataRight)
 
-    return hxgiveny(probCenter) - hxgiveny(probMergeLeft) - hxgiveny(probMergeRight)
+    return hxgiveny(probCenter) - hxgiveny(probMergeLeft) - hxgiveny(probMergeRight)  
 
 def _listIndexingHelper(l, i):
     return l[i] if (0 <= i < len(l)) else None
@@ -544,7 +541,7 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
     # pi = p(y,x=0) + p(y,x=1)
     # Delta = (p(y,x=0) - p(y,x=1))/pi
     # piCenter is split into thetaLeft * piCenter and thetaRight * piCenter
-
+    
     probLeft = dataLeft[0]
     probCenter = dataCenter[0]
     probRight = dataRight[0]
@@ -615,7 +612,7 @@ def upgradedLeftRightProbs(dataLeft, dataCenter, dataRight):
         probMergeLeft.append(thetaLeft * piCenter * normalizedLeft[b])
         probMergeRight.append(thetaRight * piCenter * normalizedRight[b])
 
-    return probMergeLeft, probMergeRight
+    return probMergeLeft, probMergeRight 
 
 def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution):
     """Calculate the frozen set by degrading and upgrading the a-priori and joint distributions, respectively
@@ -672,5 +669,5 @@ def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistri
 
         Pevec.append(xyDists[n][i].errorProb())
 
-    frozenSet = BinaryPolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
-    return frozenSet
+    frozenSet = PolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
+    return frozenSet   

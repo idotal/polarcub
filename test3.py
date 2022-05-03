@@ -1,30 +1,24 @@
 #! /usr/bin/env python3
 
-from ScalarDistributions import BinaryMemorylessDistribution
-from VectorDistributions import BinaryMemorylessVectorDistribution as bmvd
-from VectorDistributions import BinaryTrellis
-import BinaryPolarEncoderDecoder
 import random
 
+import QaryPolarEncoderDecoder
+from ScalarDistributions import QaryMemorylessDistribution
 
-# TODO: move these into BinaryMemorylessDistribution, and perhaps make them class methods
 
-def make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, length):
-    def make_xVectorDistribuiton():
-        xDistribution = BinaryMemorylessDistribution.BinaryMemorylessDistribution()
-
-        xDistribution.probs.append( [-1.0,-1.0] )
-        for x in range(2):
-            xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
-
-        xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
+def make_xVectorDistribution_fromQaryMemorylessDistribution(q, xyDistribution, length):
+    def make_xVectorDistribution():
+        xDistribution = QaryMemorylessDistribution.QaryMemorylessDistribution(q)
+        xDistribution.probs = [xyDistribution.calcXMarginals()]
+        xVectorDistribution = xDistribution.makeQaryMemorylessVectorDistribution(length, None)
         return xVectorDistribution
-    return make_xVectorDistribuiton
+    return make_xVectorDistribution
+
 
 def make_codeword_noprocessing(encodedVector):
     return encodedVector
 
-def simulateChannel_fromBinaryMemorylessDistribution(xyDistribution):
+def simulateChannel_fromQaryMemorylessDistribution(xyDistribution):
     def simulateChannel(codeword):
         receivedWord = []
         length = len(codeword)
@@ -47,19 +41,20 @@ def simulateChannel_fromBinaryMemorylessDistribution(xyDistribution):
 
     return simulateChannel
 
-def make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution):
+def make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution):
     def make_xyVectrorDistribution(receivedWord):
         length = len(receivedWord)
         useTrellis = False
 
         if useTrellis:
-            xyVectorDistribution =  xyDistribution.makeBinaryTrellisDistribution(length, receivedWord)
+            xyVectorDistribution = xyDistribution.makeQaryTrellisDistribution(length, receivedWord)
         else:
-            xyVectorDistribution = xyDistribution.makeBinaryMemorylessVectorDistribution(length, receivedWord)
+            xyVectorDistribution = xyDistribution.makeQaryMemorylessVectorDistribution(length, receivedWord)
 
         return xyVectorDistribution
     return make_xyVectrorDistribution
 
+q = 2
 p = 0.11
 L = 100
 n = 7
@@ -68,20 +63,20 @@ N = 2 ** n
 upperBoundOnErrorProbability = 0.1
 
 xDistribution = None
-xyDistribution = BinaryMemorylessDistribution.makeBSC(p)
+xyDistribution = QaryMemorylessDistribution.makeQSC(q, p)
 
-frozenSet = BinaryMemorylessDistribution.calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
+frozenSet = QaryMemorylessDistribution.calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
 
 # print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
 
 numberOfTrials = 4000
 
-make_xVectorDistribuiton = make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, N)
+make_xVectorDistribution = make_xVectorDistribution_fromQaryMemorylessDistribution(q, xyDistribution, N)
 make_codeword = make_codeword_noprocessing
-simulateChannel = simulateChannel_fromBinaryMemorylessDistribution(xyDistribution)
-make_xyVectorDistribution = make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution)
+simulateChannel = simulateChannel_fromQaryMemorylessDistribution(xyDistribution)
+make_xyVectorDistribution = make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution)
 
-BinaryPolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet)
+QaryPolarEncoderDecoder.encodeDecodeSimulation(q, N, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet, verbosity=0)
 
 # # trustXYProbs = False
 # trustXYProbs = True

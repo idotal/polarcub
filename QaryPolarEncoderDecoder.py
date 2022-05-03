@@ -248,7 +248,7 @@ class QaryPolarEncoderDecoder:
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
 
-def encodeDecodeSimulation(length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed=1, randomInformationSeed=1, verbosity=0):
+def encodeDecodeSimulation(q, length, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet, commonRandomnessSeed=1, randomInformationSeed=1, verbosity=0):
     """Run a polar encoder and a corresponding decoder (SC, not SCL)
 
     Args:

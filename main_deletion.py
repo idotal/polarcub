@@ -6,7 +6,7 @@ from VectorDistributions import BinaryTrellis
 from VectorDistributions import CollectionOfBinaryTrellises
 from ScalarDistributions import BinaryMemorylessDistribution
 import Guardbands
-import PolarEncoderDecoder
+import BinaryPolarEncoderDecoder
 
 # for profiling
 import cProfile
@@ -101,7 +101,7 @@ def main():
 
         trustXYProbs = False if n > n0 else True
 
-        frozenSet = PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfGenieTrials, upperBoundOnErrorProbability, genieSeed=args['genie_seed'], trustXYProbs=trustXYProbs, filename=filename)
+        frozenSet = BinaryPolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfGenieTrials, upperBoundOnErrorProbability, genieSeed=args['genie_seed'], trustXYProbs=trustXYProbs, filename=filename)
 
     if numberOfEncodingDecodingTrials is not None:
         verbosity = 0
@@ -110,7 +110,7 @@ def main():
             frozenSet = readFrozenSetFromFile( filename )
     
         print( "performing", numberOfEncodingDecodingTrials, "encoding/decoding trials")
-        PolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfEncodingDecodingTrials, frozenSet, commonRandomnessSeed=args['common_randomness_seed'],  randomInformationSeed=args['information_seed'], verbosity=verbosity)
+        BinaryPolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfEncodingDecodingTrials, frozenSet, commonRandomnessSeed=args['common_randomness_seed'],  randomInformationSeed=args['information_seed'], verbosity=verbosity)
 
 def readFrozenSetFromFile( filename ):
     frozenSet = set()

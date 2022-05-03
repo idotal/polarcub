@@ -5,6 +5,8 @@ import numpy as np
 import sys
 import math
 from enum import Enum
+import QaryPolarEncoderDecoder
+from VectorDistributions import QaryMemorylessVectorDistribution
 
 # constants
 lcrLeft = 0
@@ -152,6 +154,16 @@ class QaryMemorylessDistribution:
             marginals.append(tempSum)
 
         return marginals
+
+    def calcXMarginal(self, x):
+        """calculate the marginal p(X = x)"""
+        tempSum = 0.0
+        for probTuple in self.probs:
+            tempSum += probTuple[x]
+        return tempSum
+
+    def probXGivenY(self, x, y):
+        return self.probs[y][x] / sum(self.probs[y])
 
     def calcYMarginal(self, y):
         """calculate the marginal p(Y = y)"""
@@ -719,14 +731,25 @@ class QaryMemorylessDistribution:
         M = floor( L ** (1.0/(self.q-1)) + sys.float_info.epsilon )
         return M
 
+    def makeQaryMemorylessVectorDistribution(self, length, yvec):
+        qmvd = QaryMemorylessVectorDistribution.QaryMemorylessVectorDistribution(self.q, length)
+
+        if yvec is not None:
+            assert (len(yvec) == length)
+            for i in range(length):
+                for x in range(self.q):
+                    qmvd.probs[i][x] = self.probs[yvec[i]][x]
+        else:
+            for i in range(length):
+                for x in range(self.q):
+                    qmvd.probs[i][x] = self.probs[0][x]
+
+        return qmvd
+
 # useful channels
 def makeQSC(q, p):
     qsc = QaryMemorylessDistribution(q)
-
-    for y in range(q):
-        tempProbs = [(1.0 - p)/q if x == y else p/(q*(q-1)) for x in range(q)]
-        qsc.append(tempProbs)
-    
+    qsc.probs = [[(1.0 - p) / q if x == y else p / (q * (q - 1)) for x in range(q)] for y in range(q)]
     return qsc
 
 def makeQEC(q, p):
@@ -839,3 +862,60 @@ def upgrade_cost_lower_bound(q, L):
 
     return kappa*(L**(-2/(q-1)))/math.log(2)
 
+def calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution):
+    """Calculate the frozen set by degrading and upgrading the a-priori and joint distributions, respectively
+
+    Args:
+        n (int): number of polar transforms
+
+        L (int): number of quantization levels, for both encoding and decoding
+
+        upperBoundOnErrorProbability (float): select an index i to be unfrozen if the total-variation K(U_i|U^{i-1}) \leq epsilon/(2N) and the probatility of error Pe(U_i | U^{i-1}, Y^{N-1}) \leq epsilon/(2N), where epsilon is short for upperBoundOnErrorProbability
+
+        xVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-priori entries for P(X=j) for all j in range(q). If this is set to None, then we assume a uniform input distribution, in which case the above criterion for i being unfrozen is simplified to Pe(U_i | U^{i-1}, Y^{N-1}) \leq epsilon/N.
+
+        xyVectorDistribution (VectorDistribution): in a memoryless setting, this is essentially a vector with a-posteriori entries for P(X=j) for all j in range(q). That is, entry i contains P(X=j,Y=y_i) for all j in range(q).
+    Returns:
+        frozenSet (set): the set of frozen indices
+    """
+
+    assert (n >= 0)
+    assert (L > 0)
+    assert (upperBoundOnErrorProbability > 0)
+    assert (xyDistribution is not None)
+
+    if xDistribution is not None:
+        xDists = []
+        xDists.append([])
+        xDists[0].append(xDistribution)
+
+        for m in range(1, n + 1):
+            xDists.append([])
+            for dist in xDists[m - 1]:
+                xDists[m].append(dist.minusTransform().upgrade(L))
+                xDists[m].append(dist.plusTransform().upgrade(L))
+
+    xyDists = []
+    xyDists.append([])
+    xyDists[0].append(xyDistribution)
+
+    for m in range(1, n + 1):
+        xyDists.append([])
+        for dist in xyDists[m - 1]:
+            xyDists[m].append(dist.minusTransform().degrade(L))
+            xyDists[m].append(dist.plusTransform().degrade(L))
+
+    N = 1 << n
+    TVvec = []
+    Pevec = []
+
+    for i in range(N):
+        if xDistribution is not None:
+            TVvec.append(xDists[n][i].totalVariation())
+        else:
+            TVvec.append(0.0)
+
+        Pevec.append(xyDists[n][i].errorProb())
+
+    frozenSet = QaryPolarEncoderDecoder.frozenSetFromTVAndPe(TVvec, Pevec, upperBoundOnErrorProbability)
+    return frozenSet

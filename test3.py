@@ -54,30 +54,37 @@ def make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution):
         return xyVectorDistribution
     return make_xyVectrorDistribution
 
-q = 2
-p = 0.11
-L = 100
-n = 7
-N = 2 ** n
+def test(q):
+    print("q = " + str(q))
 
-upperBoundOnErrorProbability = 0.1
+    p = 0.11
+    L = 100
+    n = 7
+    N = 2 ** n
 
-xDistribution = None
-xyDistribution = QaryMemorylessDistribution.makeQSC(q, p)
+    upperBoundOnErrorProbability = 0.1
 
-frozenSet = QaryMemorylessDistribution.calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability, xDistribution, xyDistribution)
+    xDistribution = None
+    xyDistribution = QaryMemorylessDistribution.makeQSC(q, p)
 
-# print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
+    frozenSet = QaryMemorylessDistribution.calcFrozenSet_degradingUpgrading(n, L, upperBoundOnErrorProbability,
+                                                                            xDistribution, xyDistribution)
 
-numberOfTrials = 4000
+    # print("Rate = ", N - len(frozenSet), "/", N, " = ", (N - len(frozenSet)) / N)
 
-make_xVectorDistribution = make_xVectorDistribution_fromQaryMemorylessDistribution(q, xyDistribution, N)
-make_codeword = make_codeword_noprocessing
-simulateChannel = simulateChannel_fromQaryMemorylessDistribution(xyDistribution)
-make_xyVectorDistribution = make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution)
+    numberOfTrials = 4000
 
-QaryPolarEncoderDecoder.encodeDecodeSimulation(q, N, make_xVectorDistribution, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet, verbosity=0)
+    make_xVectorDistribution = make_xVectorDistribution_fromQaryMemorylessDistribution(q, xyDistribution, N)
+    make_codeword = make_codeword_noprocessing
+    simulateChannel = simulateChannel_fromQaryMemorylessDistribution(xyDistribution)
+    make_xyVectorDistribution = make_xyVectorDistribution_fromQaryMemorylessDistribution(xyDistribution)
 
-# # trustXYProbs = False
-# trustXYProbs = True
-# PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, upperBoundOnErrorProbability, trustXYProbs)
+    QaryPolarEncoderDecoder.encodeDecodeSimulation(q, N, make_xVectorDistribution, make_codeword, simulateChannel,
+                                                   make_xyVectorDistribution, numberOfTrials, frozenSet, verbosity=0)
+
+    # # trustXYProbs = False
+    # trustXYProbs = True
+    # PolarEncoderDecoder.genieEncodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, upperBoundOnErrorProbability, trustXYProbs)
+
+test(2)
+test(3)

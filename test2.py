@@ -3,7 +3,7 @@
 from ScalarDistributions import BinaryMemorylessDistribution
 from VectorDistributions import BinaryMemorylessVectorDistribution as bmvd
 from VectorDistributions import BinaryTrellis
-import PolarEncoderDecoder
+import BinaryPolarEncoderDecoder
 import random
 
 
@@ -16,7 +16,7 @@ def make_xVectorDistribuiton_fromBinaryMemorylessDistribution(xyDistribution, le
         xDistribution.probs.append( [-1.0,-1.0] )
         for x in range(2):
             xDistribution.probs[0][x] = xyDistribution.calcXMarginal(x)
-        
+
         xVectorDistribution = xDistribution.makeBinaryMemorylessVectorDistribution(length, None)
         return xVectorDistribution
     return make_xVectorDistribuiton
@@ -31,10 +31,10 @@ def simulateChannel_fromBinaryMemorylessDistribution(xyDistribution):
 
         for j in range(length):
             x = codeword[j]
-        
+
             rand = random.random()
             probSum = 0.0
-        
+
             for y in range(len(xyDistribution.probs)):
                 if probSum + xyDistribution.probXGivenY(x,y) >= rand:
                     receivedWord.append(y)
@@ -42,7 +42,7 @@ def simulateChannel_fromBinaryMemorylessDistribution(xyDistribution):
                     break
                 else:
                     probSum += xyDistribution.probXGivenY(x,y)
-        
+
         return receivedWord
 
     return simulateChannel
@@ -81,7 +81,7 @@ make_codeword = make_codeword_noprocessing
 simulateChannel = simulateChannel_fromBinaryMemorylessDistribution(xyDistribution)
 make_xyVectorDistribution = make_xyVectorDistribution_fromBinaryMemorylessDistribution(xyDistribution)
 
-PolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet)
+BinaryPolarEncoderDecoder.encodeDecodeSimulation(N, make_xVectorDistribuiton, make_codeword, simulateChannel, make_xyVectorDistribution, numberOfTrials, frozenSet)
 
 # # trustXYProbs = False
 # trustXYProbs = True

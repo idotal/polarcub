@@ -197,7 +197,6 @@ class QaryPolarEncoderDecoder:
             if self.frozenOrInformation[uIndex] == uIndexType.information:
                 if decoding:
                     marginalizedVector = xyVectorDistribution.calcMarginalizedProbabilities()
-                    # print( marginalizedVector )
                     information[informationVectorIndex] = np.argmax(marginalizedVector)
                 encodedVector[0] = information[informationVectorIndex]
                 next_uIndex = uIndex + 1
@@ -244,7 +243,7 @@ class QaryPolarEncoderDecoder:
 
             for halfi in range(halfLength):
                 encodedVector[2*halfi] = (minusEncodedVector[halfi] + plusEncodedVector[halfi]) % self.q
-                encodedVector[2*halfi + 1] = plusEncodedVector[halfi]
+                encodedVector[2*halfi + 1] = (-plusEncodedVector[halfi] + self.q) % self.q
 
             return (encodedVector, next_uIndex, next_informationVectorIndex)
 

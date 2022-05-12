@@ -38,10 +38,9 @@ class QaryMemorylessVectorDistribution(VectorDistribution.VectorDistribution):
 
             u1 = uminusDecisions[halfi]
             for u2 in range(self.q):
-                x1 = (u1 - u2 + self.q) % self.q
-                x2 = u2
+                x1 = (u1 + u2) % self.q
+                x2 = (-u2 + self.q) % self.q
                 newVector.probs[halfi][u2] += self.probs[i][x1] * self.probs[i + 1][x2]
-            # print(newVector.probs[halfi][0], newVector.probs[halfi][1])
 
         return newVector
 

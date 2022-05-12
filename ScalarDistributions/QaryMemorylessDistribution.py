@@ -749,11 +749,7 @@ class QaryMemorylessDistribution:
 # useful channels
 def makeQSC(q, p):
     qsc = QaryMemorylessDistribution(q)
-
-    for y in range(q):
-        tempProbs = [(1.0 - p)/q if x == y else p/(q*(q-1)) for x in range(q)]
-        qsc.append(tempProbs)
-    
+    qsc.probs = [[(1.0 - p) / q if x == y else p / (q * (q - 1)) for x in range(q)] for y in range(q)]
     return qsc
 
 def makeQEC(q, p):
